@@ -1,9 +1,8 @@
 import { type NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import GithubProvider from 'next-auth/providers/github'
-import { type Provider } from 'next-auth/providers'
 
-const providers: Provider[] = [
+const providers: NextAuthOptions['providers'] = [
   // OpenAI Codex Custom Provider
   {
     id: 'openai',

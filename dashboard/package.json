@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "login": "cd .. && py codex.py login --device-auth",
-    "codex": "cd .. && py codex.py"
+    "login": "py codex.py login --device-auth",
+    "codex": "py codex.py"
   },
   "dependencies": {
     "next": "14.2.3",
