@@ -71,6 +71,19 @@ def main():
         logger.error("Stop. Cannot proceed without dependencies.")
         return
 
+    # 0. Check AI Status
+    from ai.oauth import oauth
+    s = oauth.status()
+    if not any(s.values()):
+        logger.warning("⚠️ No AI Brain connected. You must login first.")
+        choice = input("Would you like to login via CLI now? (y/n): ")
+        if choice.lower() == 'y':
+            subprocess.call([py, "codex.py", "login", "--provider", "openai"])
+            # Re-check status
+            s = oauth.status()
+            if not any(s.values()):
+                logger.error("Still no AI connected. Starting anyway...")
+    
     # 1. API Server
     api_proc = run_command(f"{py} api_server.py", name="API Server (FastAPI)")
     
