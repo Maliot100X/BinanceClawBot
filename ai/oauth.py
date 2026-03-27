@@ -137,6 +137,13 @@ class MultiOAuthManager:
     def is_authenticated(self, provider: str = "openai") -> bool:
         return self.get_token(provider) is not None
 
+    def best_token(self) -> tuple[Optional[str], Optional[str]]:
+        for provider in PROVIDERS:
+            token = self.get_token(provider)
+            if token:
+                return provider, token.get("access_token")
+        return None, None
+
     def status(self) -> dict:
         result = {}
         for p in PROVIDERS:

@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     dashboard_host: str = Field(default="0.0.0.0", alias="DASHBOARD_HOST")
 
     # ── Token storage ──────────────────────────────────────
-    token_file: Path = Field(default=BASE_DIR / ".oauth_tokens.json", alias="TOKEN_FILE")
+    token_file: Path = Field(default=Path.home() / ".config" / "bianceclawbot", alias="TOKEN_FILE")
 
 
 settings = Settings()
