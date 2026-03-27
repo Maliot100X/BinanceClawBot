@@ -25,16 +25,15 @@ async def _send_telegram(msg: str):
     )
 
 
-async def main():
-    global app
-    logger.info("🚀 KaiNova Trading Bot starting...")
-    
-    # Verify Binance API Keys
+    # Verify Binance API Keys & Connection
     import os
     from config.settings import settings
+    from core.client import get_client
+    client = get_client()
     api_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
     if api_key:
-        logger.success(f"✅ Binance API Key detected: ***{api_key[-4:]}")
+        logger.info(f"Checking Binance connectivity for key: ***{api_key[-4:]}...")
+        await client.test_authentication()
     else:
         logger.warning("⚠️ No Binance API Key found in .env or environment")
 

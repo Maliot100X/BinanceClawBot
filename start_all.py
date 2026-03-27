@@ -96,6 +96,12 @@ def main():
         retries -= 1
         
     print("[OK] Ready for Codex login (Synchronized)")
+    
+    # SECTION 5: START TELEGRAM BOT
+    print("⏳ STEP 5: Starting Telegram Bot...")
+    bot_proc = subprocess.Popen(f"{py} main.py", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print("✅ Telegram bot active in background.")
+
     print("\n🚀 ALL SYSTEMS LIVE!")
     print("👉 Dashboard is active at http://localhost:3000")
     
@@ -103,15 +109,19 @@ def main():
         while True:
             time.sleep(5)
             if dash_proc.poll() is not None:
-                print("❌ Dashboard process stopped.")
+                print("❌ Dashboard stopped.")
                 break
             if api_proc.poll() is not None:
                 print("❌ API Server stopped.")
+                break
+            if bot_proc.poll() is not None:
+                print("❌ Telegram Bot stopped.")
                 break
     except KeyboardInterrupt:
         print("\n[STOP] Shutting down...")
         dash_proc.terminate()
         api_proc.terminate()
+        bot_proc.terminate()
 
 if __name__ == "__main__":
     main()

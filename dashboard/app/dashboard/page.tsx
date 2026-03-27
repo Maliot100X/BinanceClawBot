@@ -172,6 +172,27 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
+      {/* ── Floating Guide Bot ───────────────────────────────────────────── */}
+      <motion.div 
+        drag
+        whileHover={{ scale: 1.1 }}
+        style={{ 
+          position:'fixed', bottom:'30px', right:'30px', zIndex:100,
+          width:'64px', height:'64px', borderRadius:'32px',
+          background:'linear-gradient(135deg, #00ff88 0%, #00ccff 100%)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:'32px', boxShadow:'0 10px 30px rgba(0,255,136,0.4)',
+          cursor:'pointer', border:'2px solid rgba(2,4,8,0.5)'
+        }}
+        onClick={() => toast('🤖 KaiNova: "The Brain is 100% active. Use /ai in Telegram or the Chat here to trade!"')}
+      >
+        🧠
+        <motion.div 
+          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          style={{ position:'absolute', width:'100%', height:'100%', borderRadius:'32px', border:'2px solid #00ff88' }}
+        />
+      </motion.div>
     </div>
   )
 }

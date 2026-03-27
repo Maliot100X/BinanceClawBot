@@ -144,13 +144,20 @@ class CodexAgent:
             }
 
         for _ in range(5):
-            async with httpx.AsyncClient(timeout=30) as c:
-                r = await c.post(endpoint, headers=headers, json=payload)
-                if r.status_code != 200:
-                    logger.error(f"AI Error ({provider}): {r.text}")
-                    return f"⚠️ AI error: {r.status_code}"
-                
-                resp = r.json()
+            logger.info(f"[AI:{provider}] Reaching endpoint: {endpoint}")
+            async with httpx.AsyncClient(timeout=20.0) as c:
+                try:
+                    r = await c.post(endpoint, headers=headers, json=payload)
+                    if r.status_code != 200:
+                        logger.error(f"AI Error ({provider}): {r.text}")
+                        return f"⚠️ AI error: {r.status_code}"
+                    resp = r.json()
+                except httpx.TimeoutException:
+                    logger.error(f"AI Timeout ({provider})")
+                    return "⚠️ AI response timed out (20s)."
+                except Exception as e:
+                    logger.error(f"AI Request Failed: {e}")
+                    return f"⚠️ AI Request failed: {str(e)}"
                 
             if provider == "openai":
                 choice = resp["choices"][0]

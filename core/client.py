@@ -29,6 +29,19 @@ class BinanceClient:
         self.futures_base = BINANCE_TESTNET_BASE if self.testnet else BINANCE_FUTURES_BASE
         self.coin_base = BINANCE_COIN_FUTURES_BASE
         self._session: aiohttp.ClientSession | None = None
+        
+        if self.api_key:
+            logger.info(f"Binance Client initialized with key: ***{self.api_key[-4:]}")
+
+    async def test_authentication(self) -> bool:
+        """Pings account endpoint to verify keys."""
+        try:
+            await self.get_account()
+            logger.success("✅ Binance API Authentication Successful")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Binance API Authentication Failed: {e}")
+            return False
 
     async def _get_session(self) -> aiohttp.ClientSession:
         if self._session is None or self._session.closed:
