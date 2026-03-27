@@ -45,7 +45,6 @@ export default function LoginPage() {
 
           {/* OAuth Buttons */}
           {[
-            { provider:'openai', label:'Continue with OpenAI Codex', icon:'🤖', sub:'Use your OpenAI / ChatGPT account', color:'#00ff88' },
             { provider:'google', label:'Continue with Google', icon:'🟢', sub:'Gemini · Antigravity OAuth', color:'#4285f4' },
             { provider:'github', label:'Continue with GitHub', icon:'⚫', sub:'Developer OAuth', color:'#e2e8f0' },
           ].map(({ provider, label, icon, sub, color }) => (

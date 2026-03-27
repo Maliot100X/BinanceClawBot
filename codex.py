@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-🚀 BinanceClawBot Professional CLI ('codex')
-Provides official-style authentication and bot control.
+🚀 KaiNova BinanceClawBot Professional CLI ('codex')
+Provides official-style PKCE authentication and bot control.
 
 Usage:
   py codex.py login --device-auth
@@ -12,17 +12,16 @@ Usage:
 import sys
 import argparse
 from loguru import logger
-from oauth_connect import authenticate_pkce, status as get_status
 from ai.oauth import oauth
 
 def main():
-    parser = argparse.ArgumentParser(description="BinanceClawBot Professional CLI")
+    parser = argparse.ArgumentParser(description="KaiNova BinanceClawBot Professional CLI")
     subparsers = parser.add_subparsers(dest="command")
 
     # login
     login_parser = subparsers.add_parser("login", help="Authenticate with AI providers")
     login_parser.add_argument("--device-auth", action="store_true", help="Use device-style OAuth (opens browser)")
-    login_parser.add_argument("--provider", choices=["openai", "gemini", "antigravity", "all"], default="all")
+    login_parser.add_argument("--provider", choices=["openai", "gemini", "antigravity"], default="openai")
 
     # status
     subparsers.add_parser("status", help="Check system and OAuth status")
@@ -34,22 +33,18 @@ def main():
     args = parser.parse_args()
 
     if args.command == "login":
-        if args.provider == "all":
-            for p in ["openai", "gemini", "antigravity"]:
-                print(f"\n🔑 Authenticating {p.upper()}...")
-                authenticate_pkce(p)
-        else:
-            authenticate_pkce(args.provider)
+        print(f"\n🔑 Initiating KaiNova {args.provider.upper()} Connect...")
+        oauth.login(args.provider)
             
     elif args.command == "status":
-        s = get_status()
-        print("\n📊 BinanceClawBot Status:")
-        print(f"{'='*30}")
-        for p, info in s.items():
-            icon = "✅" if info["connected"] else "❌"
-            detail = " (active)" if info["connected"] and not info.get("expired") else " (missing/expired)"
-            print(f"  {icon} {p.upper():<12} {detail}")
-        print(f"{'='*30}\n")
+        s = oauth.status()
+        print("\n📊 KaiNova System Status:")
+        print(f"{'='*40}")
+        for p, connected in s.items():
+            icon = "✅" if connected else "❌"
+            status = "CONNECTED" if connected else "DISCONNECTED"
+            print(f"  {icon} {p.upper():<12} {status}")
+        print(f"{'='*40}\n")
         
     elif args.command in ["start", "stop"]:
         import httpx

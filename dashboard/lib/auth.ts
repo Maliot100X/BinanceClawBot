@@ -4,7 +4,6 @@ import GithubProvider from 'next-auth/providers/github'
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // OpenAI Codex Custom Provider
     {
       id: 'openai',
       name: 'OpenAI Codex',
@@ -13,14 +12,13 @@ export const authOptions: NextAuthOptions = {
         url: "https://auth.openai.com/oauth/authorize",
         params: { 
           scope: "openid profile email offline_access",
-          codex_cli_simplified_flow: "true",
-          originator: "bianceclawbot",
-          prompt: "login"
+          prompt: "login",
+          response_type: "code"
         }
       },
       token: "https://auth.openai.com/oauth/token",
       userinfo: "https://api.openai.com/v1/me",
-      clientId: 'app_EMoamEEZ73f0CkXaXp7hrann',
+      clientId: process.env.OPENAI_CLIENT_ID || 'app_EMoamEEZ73f0CkXaXp7hrann',
       checks: ['pkce', 'state'],
       profile(profile: any) {
         return {
@@ -57,5 +55,5 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/login',
   },
-  secret: process.env.NEXTAUTH_SECRET || 'dev-secret-at-least-32-chars-long-for-production',
+  secret: process.env.NEXTAUTH_SECRET || 'development-secret-at-least-32-chars-long',
 }
