@@ -27,9 +27,13 @@ from core.scheduler import start_scheduler, set_notify
 
 app = FastAPI(title="BinanceClawBot API", version="1.0.0")
 
-app.add_middleware(CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://*.vercel.app", "*"],
-    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ── State ────────────────────────────────────────────────────────────────────
 _bot_running = False
@@ -95,50 +99,64 @@ async def bot_stop():
     logger.info("Bot stopped via web UI")
     return {"status": "stopped"}
 
+@app.get("/health")
+async def health():
+    return {"status": "online", "version": "1.0.0", "engine": "KaiNova"}
+
 @app.get("/portfolio")
 async def portfolio():
     try:
         client = get_client()
+        if not client or not client.api_key: return {"balances": [], "connected": False}
         account = await client.get_account()
         balances = [b for b in account.get("balances", []) if float(b.get("free", 0)) > 0 or float(b.get("locked", 0)) > 0]
-        return {"balances": balances[:20], "total_usdt": 0, "daily_pnl": 0}
+        return {"balances": balances[:20], "connected": True}
     except Exception as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        return {"balances": [], "connected": False, "error": str(e)}
 
 @app.get("/positions")
 async def positions():
-    return {"positions": order_engine.position_summary()}
+    try:
+        if not get_client().api_key: return {"positions": [], "connected": False}
+        return {"positions": order_engine.position_summary(), "connected": True}
+    except: return {"positions": [], "connected": False}
 
 @app.get("/signals")
 async def signals():
-    client = get_client()
-    results = []
-    for sym in WATCHLIST[:6]:
-        try:
-            klines = await client.get_klines(sym, "1h", 200)
-            ind = compute_indicators(sym, klines)
-            if ind:
-                sig = generate_signal(ind)
-                results.append({"symbol": sym, "signal": sig.signal.value,
-                    "confidence": sig.confidence, "rsi": ind.rsi,
-                    "price": ind.close, "trend": ind.trend, "reason": sig.reason})
-        except Exception: pass
-    return {"signals": results}
+    try:
+        client = get_client()
+        if not client.api_key: return {"signals": []}
+        results = []
+        for sym in WATCHLIST[:6]:
+            try:
+                klines = await client.get_klines(sym, "1h", 200)
+                ind = compute_indicators(sym, klines)
+                if ind:
+                    sig = generate_signal(ind)
+                    results.append({"symbol": sym, "signal": sig.signal.value,
+                        "confidence": sig.confidence, "rsi": ind.rsi,
+                        "price": ind.close, "trend": ind.trend, "reason": sig.reason})
+            except Exception: pass
+        return {"signals": results}
+    except: return {"signals": []}
 
 @app.post("/scan")
 async def scan(req: ScanReq):
-    client = get_client()
-    results = []
-    for sym in req.symbols[:10]:
-        try:
-            klines = await client.get_klines(sym, "1h", 200)
-            ind = compute_indicators(sym, klines)
-            if ind:
-                sig = generate_signal(ind)
-                results.append({"symbol": sym, "signal": sig.signal.value,
-                    "confidence": sig.confidence, "price": ind.close})
-        except Exception: pass
-    return {"results": results}
+    try:
+        client = get_client()
+        if not client.api_key: return {"results": []}
+        results = []
+        for sym in req.symbols[:10]:
+            try:
+                klines = await client.get_klines(sym, "1h", 200)
+                ind = compute_indicators(sym, klines)
+                if ind:
+                    sig = generate_signal(ind)
+                    results.append({"symbol": sym, "signal": sig.signal.value,
+                        "confidence": sig.confidence, "price": ind.close})
+            except Exception: pass
+        return {"results": results}
+    except: return {"results": []}
 
 @app.get("/skills")
 async def list_skills():

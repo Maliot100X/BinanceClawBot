@@ -71,18 +71,15 @@ def main():
         logger.error("Stop. Cannot proceed without dependencies.")
         return
 
-    # 0. Check AI Status
-    from ai.oauth import oauth
-    s = oauth.status()
-    if not any(s.values()):
-        logger.warning("⚠️ No AI Brain connected. You must login first.")
-        choice = input("Would you like to login via CLI now? (y/n): ")
-        if choice.lower() == 'y':
-            subprocess.call([py, "codex.py", "login", "--provider", "openai"])
-            # Re-check status
-            s = oauth.status()
-            if not any(s.values()):
-                logger.error("Still no AI connected. Starting anyway...")
+    # 0. Check AI Status (Robust File-Based Check)
+    from pathlib import Path
+    config_dir = Path.home() / ".config" / "bianceclawbot"
+    has_token = any(config_dir.glob("*.json")) or any(config_dir.glob("*.txt"))
+    
+    if not has_token:
+        logger.warning("⚠️ No AI Brain connected. Access the Dashboard at http://localhost:3000 to link your AI account.")
+    else:
+        logger.success("✅ AI Brain tokens detected.")
     
     # 1. API Server
     api_proc = run_command(f"{py} api_server.py", name="API Server (FastAPI)")

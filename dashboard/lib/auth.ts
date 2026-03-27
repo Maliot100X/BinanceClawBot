@@ -108,4 +108,7 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET || 'development-secret-at-least-32-chars-long',
+  // In production (Vercel), NextAuth needs the URL
+  // If NEXTAUTH_URL is not set, we use the VERCEL_URL provided by Vercel
+  debug: process.env.NODE_ENV === 'development',
 }
