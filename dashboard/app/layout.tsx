@@ -1,26 +1,21 @@
-import type { Metadata } from 'next'
+'use client'
+import { SessionProvider } from 'next-auth/react'
 import './globals.css'
+import { Inter } from 'next/font/google'
 
-export const metadata: Metadata = {
-  title: 'KaiNova — Autonomous Crypto Trading Bot',
-  description: '26 Binance Skills · OpenAI + Gemini OAuth · 24/7 Telegram Brain',
-  keywords: ['crypto', 'trading bot', 'binance', 'AI', 'autonomous', 'DeFi'],
-  openGraph: {
-    title: 'KaiNova Trading Bot Dashboard',
-    description: 'The world\'s most intelligent autonomous crypto trading platform',
-    type: 'website',
-  },
-}
+const inter = Inter({ subsets: ['latin'] })
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <title>BinanceClawBot — Autonomous Crypto Trading</title>
+        <meta name="description" content="26 Binance Skills · OpenAI + Gemini OAuth · 24/7 Telegram AI Brain"/>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>"/>
       </head>
-      <body>{children}</body>
+      <body className={inter.className} style={{ margin: 0, background: '#020408' }}>
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   )
 }
