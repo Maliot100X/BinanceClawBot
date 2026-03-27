@@ -98,31 +98,73 @@ class CodexAgent:
         import httpx
         self._history.append({"role": "user", "content": user_msg})
         messages = [{"role": "system", "content": SYSTEM_PROMPT}] + self._history[-20:]
-
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-        # Use OpenAI-compatible endpoint regardless of provider
-        endpoint = "https://api.openai.com/v1/chat/completions"
+        
+        # ── Configure Provider Endpoints ─────────────────────────────────────
+        if provider == "openai":
+            endpoint = "https://api.openai.com/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+            payload = {"model": "gpt-4o", "messages": messages, "tools": TOOLS, "tool_choice": "auto"}
+        else:
+            # Gemini / Antigravity via Google Generative Language API
+            model_name = "gemini-3.1-pro-search" if "antigravity" in provider else "gemini-1.5-pro"
+            endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+            headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+            # Google AI 1.5+ format
+            payload = {
+                "contents": [{"role": m["role"], "parts": [{"text": m["content"]}]} for m in messages],
+                "tools": [{"function_declarations": [t["function"] for t in TOOLS]}],
+            }
 
         for _ in range(5):
-            payload = {"model": "gpt-4o", "messages": messages, "tools": TOOLS, "tool_choice": "auto", "max_tokens": 1000}
             async with httpx.AsyncClient(timeout=30) as c:
                 r = await c.post(endpoint, headers=headers, json=payload)
-                r.raise_for_status()
-            choice = r.json()["choices"][0]
-            msg = choice["message"]
-            messages.append(msg)
-            if choice["finish_reason"] == "tool_calls":
-                tool_msgs = []
-                for tc in msg.get("tool_calls", []):
-                    fn, fn_args = tc["function"]["name"], json.loads(tc["function"]["arguments"])
-                    logger.info(f"[AI:{provider}] → {fn}({fn_args})")
-                    result = await _dispatch(fn, fn_args)
-                    tool_msgs.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(result, default=str)})
-                messages.extend(tool_msgs)
+                if r.status_code != 200:
+                    logger.error(f"AI Error ({provider}): {r.text}")
+                    return f"⚠️ AI error: {r.status_code}"
+                
+                resp = r.json()
+                
+            if provider == "openai":
+                choice = resp["choices"][0]
+                msg = choice["message"]
+                messages.append(msg)
+                if choice["finish_reason"] == "tool_calls":
+                    tool_msgs = []
+                    for tc in msg.get("tool_calls", []):
+                        fn, fn_args = tc["function"]["name"], json.loads(tc["function"]["arguments"])
+                        logger.info(f"[AI:{provider}] → {fn}({fn_args})")
+                        result = await _dispatch(fn, fn_args)
+                        tool_msgs.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(result, default=str)})
+                    messages.extend(tool_msgs)
+                    payload["messages"] = messages # Update payload for next loop
+                else:
+                    content = msg.get("content", "")
+                    self._history.append({"role": "assistant", "content": content})
+                    return content
             else:
-                content = msg.get("content", "")
-                self._history.append({"role": "assistant", "content": content})
-                return content
+                # Google format response handling
+                candidate = resp["candidates"][0]
+                msg = candidate["content"]
+                # Convert back to common format for history
+                text = "".join(p.get("text", "") for p in msg["parts"])
+                if "tool_calls" in candidate or any("function_call" in p for p in msg["parts"]):
+                    # Simplified tool loop for Google
+                    for part in msg["parts"]:
+                        if "function_call" in part:
+                            fc = part["function_call"]
+                            fn, fn_args = fc["name"], fc["args"]
+                            logger.info(f"[AI:{provider}] → {fn}({fn_args})")
+                            result = await _dispatch(fn, fn_args)
+                            # Add response back to payload
+                            payload["contents"].append(msg) # Assistant message
+                            payload["contents"].append({
+                                "role": "function",
+                                "parts": [{"function_response": {"name": fn, "response": {"result": result}}}]
+                            })
+                    continue # Loop back
+                else:
+                    self._history.append({"role": "assistant", "content": text})
+                    return text
         return "⚠️ AI loop limit reached."
 
     def clear(self): self._history = []
