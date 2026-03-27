@@ -23,4 +23,5 @@ export const botApi = {
   close:     (symbol: string) => api.post(`/position/close/${symbol}`),
   aiChat:    (msg: string) => api.post('/ai/chat', { message: msg }),
   history:   () => api.get('/trades/history'),
+  connectStatus: () => axios.get('/api/connect/status'),
 }

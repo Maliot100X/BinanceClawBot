@@ -91,9 +91,25 @@ class CodexAgent:
         self._history: list[dict] = []
 
     async def think(self, user_msg: str) -> str:
-        provider, token = oauth.best_token()
+        # Prioritize CLI-bridged session.json (OpenAI)
+        import os, json
+        provider, token = None, None
+        
+        if os.path.exists("session.json"):
+            try:
+                with open("session.json", "r") as f:
+                    sess = json.load(f)
+                    if sess.get("access_token"):
+                        provider = "openai"
+                        token = sess["access_token"]
+                        logger.info("Using bridged OpenAI session from session.json")
+            except: pass
+            
         if not token:
-            return "⚠️ No AI authenticated. Use /auth to connect OpenAI, Gemini, or Antigravity."
+            provider, token = oauth.best_token()
+
+        if not token:
+            return "⚠️ No AI authenticated. Use /auth or py codex.py login to connect."
 
         import httpx
         self._history.append({"role": "user", "content": user_msg})

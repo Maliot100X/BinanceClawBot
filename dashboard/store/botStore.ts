@@ -25,6 +25,8 @@ interface BotState {
   chatWithAI: (msg: string) => Promise<string>
   setTelegramConfig: (token: string, chatId: string) => Promise<void>
   setBinanceConfig: (key: string, secret: string) => Promise<void>
+  cliConnected: boolean
+  fetchCliStatus: () => Promise<void>
 }
 
 export const useBotStore = create<BotState>((set, get) => ({
@@ -37,6 +39,7 @@ export const useBotStore = create<BotState>((set, get) => ({
   authStatus: {},
   loading: false,
   error: null,
+  cliConnected: false,
 
   fetchStatus: async () => {
     try {
@@ -92,5 +95,14 @@ export const useBotStore = create<BotState>((set, get) => ({
 
   setBinanceConfig: async (key, secret) => {
     await botApi.setBinance(key, secret)
+  },
+
+  fetchCliStatus: async () => {
+    try {
+      const r = await botApi.connectStatus()
+      set({ cliConnected: r.data?.connected === true })
+    } catch { 
+      set({ cliConnected: false }) 
+    }
   },
 }))

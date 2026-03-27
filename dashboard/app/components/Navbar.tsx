@@ -2,21 +2,15 @@
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { useBotStore } from '@/store/botStore'
 
 export function Navbar() {
   const { data: session } = useSession()
-  const [cliConnected, setCliConnected] = useState(false)
+  const { cliConnected, fetchCliStatus } = useBotStore()
 
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const res = await fetch('/api/connect/status')
-        const data = await res.json()
-        setCliConnected(data.connected)
-      } catch (e) {}
-    }
-    checkStatus()
-    const intv = setInterval(checkStatus, 5000)
+    fetchCliStatus()
+    const intv = setInterval(fetchCliStatus, 5000)
     return () => clearInterval(intv)
   }, [])
 

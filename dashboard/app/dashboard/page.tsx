@@ -25,21 +25,23 @@ const genChart = () => Array.from({length:24},(_,i)=>({h:`${i}h`, v:60000+Math.r
 
 export default function DashboardPage() {
   const { data: session } = useSession()
-  const { status, isRunning, fetchStatus, fetchPortfolio, portfolio, fetchSignals, signals, startBot, stopBot, fetchPositions, positions } = useBotStore()
+  const { status, isRunning, fetchStatus, fetchPortfolio, portfolio, fetchSignals, signals, startBot, stopBot, fetchPositions, positions, cliConnected, fetchCliStatus } = useBotStore()
 
   useEffect(() => {
-    fetchStatus(); fetchPortfolio(); fetchSignals(); fetchPositions()
-    const interval = setInterval(() => { fetchStatus(); fetchSignals() }, 30000)
+    fetchStatus(); fetchPortfolio(); fetchSignals(); fetchPositions(); fetchCliStatus()
+    const interval = setInterval(() => { fetchStatus(); fetchSignals(); fetchCliStatus() }, 5000)
     return () => clearInterval(interval)
   }, [])
 
+  const isBrainConnected = !!session || cliConnected
+
   const handleStart = async () => {
-    if (!session) { toast.error('Please Connect Brain first!'); return }
+    if (!isBrainConnected) { toast.error('Please Connect Brain first!'); return }
     try { await startBot(); toast.success('✅ Bot started — scanning every 30s') }
     catch { toast.error('Failed to start — is main.py running?') }
   }
   const handleStop = async () => {
-    if (!session) return
+    if (!isBrainConnected) return
     try { await stopBot(); toast.success('⏹ Bot stopped') }
     catch { toast.error('Failed to stop bot') }
   }
@@ -49,7 +51,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ position:'relative' }}>
-      {!session && (
+      {!isBrainConnected && (
         <div style={{ 
           position:'absolute', top:0, left:0, right:0, bottom:0, 
           background:'rgba(2,4,8,0.7)', backdropFilter:'blur(8px)', zIndex:50,
@@ -74,11 +76,11 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'32px', opacity: session?1:0.4 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'32px', opacity: isBrainConnected?1:0.4 }}>
         <div>
           <h1 style={{ color:'white', fontSize:'1.8rem', fontWeight:800, margin:0 }}>📊 Dashboard Summary</h1>
           <p style={{ color:'#64748b', fontSize:'0.9rem', marginTop:'6px' }}>
-            {!session ? 'Guest Preview Mode • KaiNova Simulation' : status ? 'Backend connected' : '⚠️ Backend offline'}
+            {!isBrainConnected ? 'Guest Preview Mode • KaiNova Simulation' : status ? 'Backend connected' : '⚠️ Backend offline'}
           </p>
         </div>
         <div style={{ display:'flex', gap:'12px' }}>
