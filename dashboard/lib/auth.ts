@@ -38,6 +38,56 @@ export const authOptions: NextAuthOptions = {
           }),
         ]
       : []),
+    {
+      id: 'gemini',
+      name: 'Google Gemini',
+      type: 'oauth',
+      authorization: {
+        url: "https://accounts.google.com/o/oauth2/v2/auth",
+        params: { 
+          scope: "openid profile email https://www.googleapis.com/auth/generative-language",
+          access_type: "offline",
+          prompt: "consent"
+        }
+      },
+      token: "https://oauth2.googleapis.com/token",
+      userinfo: "https://www.googleapis.com/oauth2/v3/userinfo",
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      profile(profile: any) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        }
+      },
+    },
+    {
+      id: 'antigravity',
+      name: 'Antigravity (DeepMind)',
+      type: 'oauth',
+      authorization: {
+        url: "https://accounts.google.com/o/oauth2/v2/auth",
+        params: { 
+          scope: "openid profile email https://www.googleapis.com/auth/generative-language.retrieval",
+          access_type: "offline",
+          prompt: "consent"
+        }
+      },
+      token: "https://oauth2.googleapis.com/token",
+      userinfo: "https://www.googleapis.com/oauth2/v3/userinfo",
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      profile(profile: any) {
+        return {
+          id: profile.sub,
+          name: profile.name || "Antigravity User",
+          email: profile.email,
+          image: profile.picture,
+        }
+      },
+    },
     ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
       ? [
           GithubProvider({

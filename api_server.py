@@ -160,6 +160,21 @@ async def binance_config(cfg: BinanceConfig):
     cc._client = None
     return {"status": "ok", "message": "Binance keys configured"}
 
+class AIConfig(BaseModel):
+    provider: str
+    api_key: str
+
+@app.post("/ai/config")
+async def ai_config(cfg: AIConfig):
+    import os
+    # Map to env vars that ai/oauth.py or codex_agent.py can use
+    provider_key = f"{cfg.provider.upper()}_API_KEY"
+    os.environ[provider_key] = cfg.api_key
+    # Also save to local config if persistent
+    from ai.oauth import oauth
+    oauth.save_api_key(cfg.provider, cfg.api_key)
+    return {"status": "ok", "message": f"{cfg.provider} configured successfully"}
+
 @app.post("/telegram/config")
 async def telegram_config(cfg: TelegramConfig):
     import os

@@ -137,19 +137,40 @@ class MultiOAuthManager:
     def is_authenticated(self, provider: str = "openai") -> bool:
         return self.get_token(provider) is not None
 
+    def save_api_key(self, provider: str, api_key: str):
+        # Save to local config or env
+        os.environ[f"{provider.upper()}_API_KEY"] = api_key
+        # We can also save to the JSON if we want persistence
+        data = self._load()
+        if "api_keys" not in data: data["api_keys"] = {}
+        data["api_keys"][provider] = api_key
+        self._save(data)
+
     def best_token(self) -> tuple[Optional[str], Optional[str]]:
+        # Check OAuth first
         for provider in PROVIDERS:
             token = self.get_token(provider)
             if token:
                 return provider, token.get("access_token")
+        # Check Direct API keys as fallback
+        data = self._load()
+        keys = data.get("api_keys", {})
+        for provider, key in keys.items():
+            if key: return provider, key
         return None, None
 
     def status(self) -> dict:
-        result = {}
+        data = self._load()
+        oauth_status = {}
         for p in PROVIDERS:
-            path = _token_path(p)
-            result[p] = path.exists()
-        return result
+            oauth_status[p] = self.get_token(p) is not None
+        
+        # Add direct API key status
+        api_keys = data.get("api_keys", {})
+        for p, key in api_keys.items():
+            if key: oauth_status[f"{p}_key"] = True
+            
+        return oauth_status
 
 oauth = MultiOAuthManager()
 if __name__ == "__main__":

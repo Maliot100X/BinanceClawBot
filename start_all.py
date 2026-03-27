@@ -39,8 +39,31 @@ def run_command(cmd, cwd=None, name=""):
     logger.info(f"Starting {name}...")
     return subprocess.Popen(cmd, shell=True, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', errors='replace')
 
+def kill_ports(ports: list[int]):
+    import socket
+    import signal
+    if os.name == 'nt':
+        for port in ports:
+            try:
+                output = subprocess.check_output(f"netstat -ano | findstr :{port}", shell=True).decode()
+                for line in output.splitlines():
+                    if "LISTENING" in line:
+                        pid = line.strip().split()[-1]
+                        logger.warning(f"Killing process {pid} on port {port}...")
+                        os.system(f"taskkill /F /PID {pid}")
+            except: pass
+    else:
+        for port in ports:
+            os.system(f"fuser -k {port}/tcp > /dev/null 2>&1")
+
 def main():
-    logger.info("🚀 KaiNova BinanceClawBot — All-in-One Loader")
+    logger.info("🦾 KaiNova BinanceClawBot — Professional All-in-One Loader")
+    kill_ports([3000, 3001, 8000])
+    
+    if not os.path.exists(".env") and os.path.exists(".env.example"):
+        logger.warning("No .env found. Creating from .env.example...")
+        shutil.copy(".env.example", ".env")
+
     py = get_python_cmd()
     logger.info(f"Using Python: {py}")
     

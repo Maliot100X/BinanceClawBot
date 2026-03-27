@@ -104,6 +104,18 @@ class CodexAgent:
             endpoint = "https://api.openai.com/v1/chat/completions"
             headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
             payload = {"model": "gpt-4o", "messages": messages, "tools": TOOLS, "tool_choice": "auto"}
+        elif provider == "openrouter":
+            endpoint = "https://openrouter.ai/api/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "HTTP-Referer": "https://github.com/Maliot100X/BinanceClawBot"}
+            payload = {"model": "anthropic/claude-3.5-sonnet", "messages": messages, "tools": TOOLS}
+        elif provider == "groq":
+            endpoint = "https://api.groq.com/openai/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+            payload = {"model": "llama3-70b-8192", "messages": messages, "tools": TOOLS}
+        elif provider == "ollama":
+            endpoint = "http://localhost:11434/v1/chat/completions"
+            headers = {"Content-Type": "application/json"}
+            payload = {"model": "llama3", "messages": messages}
         else:
             # Gemini / Antigravity via Google Generative Language API
             model_name = "gemini-3.1-pro-search" if "antigravity" in provider else "gemini-1.5-pro"

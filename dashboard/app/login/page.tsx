@@ -43,30 +43,58 @@ export default function LoginPage() {
             Connect your account to control the bot, view portfolio, and run AI analysis
           </p>
 
-          {/* OAuth Buttons */}
-          {[
-            { provider:'google', label:'Continue with Google', icon:'🟢', sub:'Gemini · Antigravity OAuth', color:'#4285f4' },
-            { provider:'github', label:'Continue with GitHub', icon:'⚫', sub:'Developer OAuth', color:'#e2e8f0' },
-          ].map(({ provider, label, icon, sub, color }) => (
-            <motion.button key={provider} whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
-              onClick={() => signIn(provider, { callbackUrl: '/dashboard' })}
-              style={{
-                width:'100%', padding:'14px 20px', borderRadius:'12px', cursor:'pointer', marginBottom:'12px',
-                background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.12)',
-                display:'flex', alignItems:'center', gap:'14px', textAlign:'left'
-              }}>
-              <span style={{ fontSize:'22px' }}>{icon}</span>
-              <div>
-                <div style={{ color:'white', fontWeight:600, fontSize:'0.95rem' }}>{label}</div>
-                <div style={{ color:'#475569', fontSize:'0.75rem' }}>{sub}</div>
-              </div>
-            </motion.button>
-          ))}
+          {/* OAuth Providers */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {[
+              { provider:'openai', label:'Continue with OpenAI Codex', icon:'🤖', sub:'Use your OpenAI / ChatGPT account', color:'#10a37f' },
+              { provider:'google', label:'Continue with Google', icon:'🟢', sub:'Gemini · Antigravity OAuth', color:'#4285f4' },
+              { provider:'github', label:'Continue with GitHub', icon:'⚫', sub:'Developer OAuth', color:'#000000' },
+            ].map(({ provider, label, icon, sub }) => (
+              <motion.button key={provider} whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
+                onClick={() => signIn(provider, { callbackUrl: '/dashboard' })}
+                style={{
+                  width:'100%', padding:'12px 16px', borderRadius:'12px', cursor:'pointer',
+                  background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)',
+                  display:'flex', alignItems:'center', gap:'12px', textAlign:'left'
+                }}>
+                <span style={{ fontSize:'20px' }}>{icon}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ color:'white', fontWeight:600, fontSize:'0.9rem' }}>{label}</div>
+                  <div style={{ color:'#64748b', fontSize:'0.7rem' }}>{sub}</div>
+                </div>
+              </motion.button>
+            ))}
+          </div>
 
-          <div style={{ marginTop:'20px', padding:'12px', background:'rgba(0,255,136,0.05)', borderRadius:'10px', border:'1px solid rgba(0,255,136,0.1)' }}>
-            <p style={{ color:'#64748b', fontSize:'0.75rem', lineHeight:1.6 }}>
-              🔒 Your Binance API keys are stored only in your session, never on our servers.
-              OAuth tokens are encrypted and auto-refreshed.
+          {/* Divider */}
+          <div style={{ margin: '24px 0', borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}>
+            <span style={{ 
+              position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', 
+              background: '#0a1628', padding: '0 12px', color: '#475569', 
+              fontSize: '0.7rem', fontWeight: 600, letterSpacing: '1px' 
+            }}>OR USE API PROVIDER</span>
+          </div>
+
+          {/* Direct API Key Section */}
+          <div style={{ textAlign:'left', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ marginBottom: '12px' }}>
+              <select style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#1e293b', border: '1px solid #334155', color: 'white', fontSize: '0.85rem', marginBottom: '8px' }}>
+                <option>OpenRouter (Recommended)</option>
+                <option>Groq (Ultra-Fast)</option>
+                <option>OpenAI (Direct Key)</option>
+                <option>Ollama (Local AI)</option>
+              </select>
+              <input type="password" placeholder="Enter your API Key..." style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid #334155', color: 'white', fontSize: '0.85rem' }} />
+            </div>
+            <button style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#00ff88', color: '#020617', fontWeight: 700, cursor: 'pointer', border: 'none', fontSize: '0.85rem' }}>
+              Connect via Key
+            </button>
+          </div>
+
+          <div style={{ marginTop:'20px', padding:'12px', background:'rgba(0,255,136,0.03)', borderRadius:'10px', border:'1px solid rgba(0,255,136,0.1)' }}>
+            <p style={{ color:'#64748b', fontSize:'0.7rem', lineHeight:1.5 }}>
+              🔒 Your API keys are stored only in your session.
+              Auth tokens are encrypted locally.
             </p>
           </div>
         </div>
