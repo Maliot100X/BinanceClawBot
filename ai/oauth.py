@@ -19,7 +19,7 @@ def _token_path(provider: str) -> Path:
 
 PROVIDERS = {
     "openai": {
-        "client_id": "app_EMoamEEZ73f0CkXaXp7hrann",
+        "client_id": os.environ.get("OPENAI_CLIENT_ID", "app_EMoamEEZ73f0CkXaXp7hrann"),
         "auth_url": "https://auth.openai.com/oauth/authorize",
         "token_url": "https://auth.openai.com/oauth/token",
         "scopes": "openid profile email offline_access",
@@ -133,6 +133,16 @@ class MultiOAuthManager:
                 return new_token
         except: pass
         return None
+
+    def is_authenticated(self, provider: str = "openai") -> bool:
+        return self.get_token(provider) is not None
+
+    def status(self) -> dict:
+        result = {}
+        for p in PROVIDERS:
+            path = _token_path(p)
+            result[p] = path.exists()
+        return result
 
 oauth = MultiOAuthManager()
 if __name__ == "__main__":

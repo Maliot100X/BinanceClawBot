@@ -57,7 +57,7 @@ def main():
     # 3. Dashboard
     dash_proc = run_command("npm run dev", cwd="dashboard", name="Next.js Dashboard")
     
-    logger.success("📊 ALL SYSTEMS LIVE! Access Dashboard at http://localhost:3000")
+    logger.success("📊 ALL SYSTEMS LIVE! Access Dashboard at http://localhost:3000 (or 3001 if busy)")
     
     try:
         while True:

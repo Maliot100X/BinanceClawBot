@@ -13,7 +13,7 @@ Path("logs").mkdir(exist_ok=True)
 
 from config.settings import settings
 from core.scheduler import start_scheduler, set_notify
-from telegram.bot import build_bot
+from telegram_bot.bot import build_bot
 
 
 async def _send_telegram(msg: str):

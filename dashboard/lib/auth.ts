@@ -18,7 +18,8 @@ export const authOptions: NextAuthOptions = {
       },
       token: "https://auth.openai.com/oauth/token",
       userinfo: "https://api.openai.com/v1/me",
-      clientId: process.env.OPENAI_CLIENT_ID || 'app_EMoamEEZ73f0CkXaXp7hrann',
+      // Real OpenAI OAuth integration using PKCE
+      clientId: process.env.OPENAI_CLIENT_ID || 'app_EMoamEEZ73f0CkXaXp7hrann', 
       checks: ['pkce', 'state'],
       profile(profile: any) {
         return {

@@ -27,8 +27,8 @@ from execution.order_engine import order_engine
 from risk.risk_manager import risk_manager
 from signals.indicators import compute_indicators
 from signals.signal_generator import generate_signal, Signal
-from ai.oauth import oauth_manager
-from ai.codex_agent import codex_agent, DEFAULT_SYMBOLS, _scan_market, _portfolio_status
+from ai.oauth import oauth
+from ai.codex_agent import codex_agent, DEFAULT_SYMBOLS, _scan, _portfolio
 
 # ─────────────────────────────── EMOJI PALETTE ──────────────────────────────
 E = {
@@ -137,7 +137,7 @@ def _confirm_keyboard(action: str, symbol: str, qty: str) -> InlineKeyboardMarku
 # ─────────────────────────────── MESSAGE FORMATTERS ─────────────────────────
 
 async def _fmt_scan(symbols: list[str] | None = None) -> str:
-    data = await _scan_market(symbols or DEFAULT_SYMBOLS[:8])
+    data = await _scan(symbols or DEFAULT_SYMBOLS[:8])
     results = data.get("scan_results", [])
     if not results:
         return f"{E['warn']} No scan data available."
@@ -154,7 +154,7 @@ async def _fmt_scan(symbols: list[str] | None = None) -> str:
 
 
 async def _fmt_portfolio() -> str:
-    data = await _portfolio_status()
+    data = await _portfolio()
     if "error" in data:
         return f"{E['cross']} Portfolio error: {data['error']}"
 
@@ -220,7 +220,7 @@ async def _fmt_status() -> str:
     except Exception:
         pass
 
-    ai_ok = oauth_manager.is_authenticated()
+    ai_ok = oauth.is_authenticated()
     bot_active = risk_manager.is_active()
 
     return (
@@ -704,8 +704,8 @@ async def cmd_auth(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     )
     try:
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, oauth_manager.start_auth_flow)
-        if oauth_manager.is_authenticated():
+        await loop.run_in_executor(None, oauth.login, "openai")
+        if oauth.is_authenticated():
             await update.message.reply_text(f"{E['check']} Authentication successful! AI features are now active.", reply_markup=_main_menu())
         else:
             await update.message.reply_text(f"{E['cross']} Authentication failed or was cancelled.", reply_markup=_back_button())
