@@ -25,6 +25,10 @@ async def _send_telegram(msg: str):
     )
 
 
+async def main():
+    global app
+    logger.info("🚀 KaiNova Trading Bot starting...")
+
     # Verify Binance API Keys & Connection
     import os
     from config.settings import settings
@@ -50,6 +54,9 @@ async def _send_telegram(msg: str):
         await app.start()
         await app.updater.start_polling(drop_pending_updates=True)
         logger.success("✅ Telegram bot online")
+        
+        while True:
+            await asyncio.sleep(1)
 
         # Register bot commands menu
         from telegram import BotCommand

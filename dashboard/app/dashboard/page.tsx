@@ -73,8 +73,8 @@ export default function DashboardPage() {
 
   const usdt = portfolio?.balances?.find((b:any) => b.asset === 'USDT')?.free || '0'
   const totalPnl = portfolio?.daily_pnl || 0
-
-  return (
+ 
+   return (
     <>
       {/* ── Floating Guide Bot ───────────────────────────────────────────── */}
       <motion.div 
@@ -82,78 +82,83 @@ export default function DashboardPage() {
         whileHover={{ scale: 1.1 }}
         style={{ 
           position:'fixed', bottom:'30px', right:'30px', zIndex:1000,
-          width:'64px', height:'64px', borderRadius:'32px',
-          background:'linear-gradient(135deg, #00ff88 0%, #00ccff 100%)',
+          width:'80px', height:'80px', borderRadius:'40px',
+          background:'linear-gradient(135deg, #020617 0%, #0f172a 100%)',
           display:'flex', alignItems:'center', justifyContent:'center',
-          fontSize:'32px', boxShadow:'0 10px 30px rgba(0,255,136,0.6)',
-          cursor:'pointer', border:'2px solid rgba(2,4,8,0.8)'
+          flexDirection:'column',
+          fontSize:'24px', boxShadow:'0 10px 40px rgba(0,255,136,0.5)',
+          cursor:'pointer', border:'2px solid #00ff88',
+          userSelect:'none'
         }}
         onClick={() => {
-          toast('🤖 KaiNova AI: "The Brain is active. Check your logs if keys show as Missing."')
-          console.log("Floating Bot Clicked - Brain Status:", isBrainConnected)
+          toast('🤖 KaiNova Brain: "Everything is synchronized. Use /ai in Telegram or Start the Engine below!"')
+          console.log("Guide Bot Triggered")
         }}
       >
-        🧠
-        <motion.div 
-          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          style={{ position:'absolute', width:'100%', height:'100%', borderRadius:'32px', border:'2px solid #00ff88' }}
-        />
+        <div style={{ fontSize:'32px', marginBottom:'-5px' }}>🧠</div>
+        <div style={{ fontSize:'10px', color:'#00ff88', fontWeight:900, letterSpacing:'1px' }}>HELPER</div>
+        {isBrainConnected && (
+          <motion.div 
+            animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0.1, 0.6] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            style={{ position:'absolute', border:'2px solid #00ff88', width:'100%', height:'100%', borderRadius:'40px' }}
+          />
+        )}
       </motion.div>
 
       <div style={{ position:'relative', minHeight:'100vh', paddingBottom:'100px' }}>
         {!isBrainConnected && (
           <div style={{ 
             position:'absolute', top:0, left:0, right:0, bottom:0, 
-            background:'rgba(2,4,8,0.85)', backdropFilter:'blur(12px)', zIndex:50,
+            background:'rgba(2,4,8,0.9)', backdropFilter:'blur(15px)', zIndex:50,
             display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
             borderRadius:'24px', border:'1px solid rgba(0,255,136,0.2)', padding:'20px'
           }}>
             <motion.div initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}}
-              style={{ textAlign:'center', background:'#0f172a', padding:'40px', borderRadius:'24px', border:'1px solid #00ff8833', boxShadow:'0 40px 100px rgba(0,0,0,0.8)' }}>
-              <div style={{ fontSize:'64px', marginBottom:'24px' }}>🛡️</div>
-              <h2 style={{ color:'white', marginBottom:'8px', fontSize:'1.8rem' }}>AI Brain Connection Required</h2>
-              <p style={{ color:'#94a3b8', maxWidth:'380px', marginBottom:'32px', fontSize:'1rem', lineHeight:1.6 }}>
-                KaiNova is currently in <b>Safe Mode</b>. Connect your OpenAI or Gemini Brain via CLI to unlock live trading signals and portfolio execution.
+              style={{ textAlign:'center', background:'#0f172a', padding:'50px', borderRadius:'32px', border:'1px solid #00ff8833', boxShadow:'0 50px 100px rgba(0,0,0,0.8)' }}>
+              <div style={{ fontSize:'72px', marginBottom:'32px' }}>🛡️</div>
+              <h2 style={{ color:'white', marginBottom:'12px', fontSize:'2.2rem', fontWeight:900 }}>AI BRAIN REQUIRED</h2>
+              <p style={{ color:'#94a3b8', maxWidth:'420px', marginBottom:'40px', fontSize:'1.1rem', lineHeight:1.7 }}>
+                KaiNova is currently in <b>Safe Mode</b>. Connect your OpenAI or Gemini Brain via CLI to unlock live autonomous trading.
               </p>
               <Link href="/login" style={{ 
-                padding:'14px 40px', borderRadius:'14px', background:'#00ff88', color:'#020408', 
-                textDecoration:'none', fontWeight:800, fontSize:'1.1rem', display:'inline-block',
-                boxShadow:'0 0 30px rgba(0,255,136,0.4)', transition:'0.3s'
+                padding:'18px 50px', borderRadius:'18px', background:'linear-gradient(135deg, #00ff88 0%, #00ccff 100%)', color:'#020617', 
+                textDecoration:'none', fontWeight:900, fontSize:'1.2rem', display:'inline-block',
+                boxShadow:'0 0 40px rgba(0,255,136,0.5)', transition:'0.3s'
               }}>
-                Connect Brain 🧠
+                CONNECT BRAIN 🧠
               </Link>
             </motion.div>
           </div>
         )}
 
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'32px', opacity: isBrainConnected?1:0.4 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'32px', opacity: isBrainConnected?1:0.3 }}>
           <div>
             <h1 style={{ color:'white', fontSize:'1.8rem', fontWeight:800, margin:0 }}>📊 Dashboard Summary</h1>
             <p style={{ color:'#64748b', fontSize:'0.9rem', marginTop:'6px' }}>
               {!isBrainConnected ? 'Guest Preview Mode • KaiNova Simulation' : 
                !isBinanceReady ? '⚠️ BINANCE KEYS MISSING (Check .env in root)' : 
-               status ? `✅ ENGINE LIVE • BINANCE: ${binanceKey}` : '⚠️ Backend offline'}
+               status ? `✅ ENGINE LIVE • BINANCE: ${binanceKey}` : '🔄 Syncing Engine...'}
             </p>
           </div>
           <div style={{ display:'flex', gap:'12px' }}>
             <button onClick={handleStart} disabled={!canStartBot} style={{ 
-              padding:'14px 28px', borderRadius:'14px', border:`1px solid ${canStartBot ? 'rgba(0,255,136,0.4)' : 'rgba(148,163,184,0.3)'}`, 
-              background: canStartBot ? 'linear-gradient(135deg, rgba(0,255,136,0.2) 0%, rgba(0,204,255,0.1) 100%)' : 'rgba(148,163,184,0.05)', 
-              color: canStartBot ? '#00ff88' : '#94a3b8', 
+              padding:'14px 32px', borderRadius:'16px', border:`1px solid ${canStartBot ? '#00ff88' : '#334155'}`, 
+              background: canStartBot ? 'rgba(0,255,136,0.15)' : 'rgba(51,65,85,0.05)', 
+              color: canStartBot ? '#00ff88' : '#475569', 
               cursor: canStartBot ? 'pointer' : 'not-allowed', 
-              fontWeight: 800, fontSize:'0.9rem', textTransform:'uppercase', letterSpacing:'0.05em'
+              fontWeight: 900, fontSize:'0.9rem', textTransform:'uppercase', letterSpacing:'1px'
             }}>
-              ▶ Start engine
+              ▶ START BOT
             </button>
-            <button onClick={handleStop} disabled={!canStartBot} style={{ 
-              padding:'14px 28px', borderRadius:'14px', border:`1px solid ${canStartBot ? 'rgba(255,68,85,0.4)' : 'rgba(148,163,184,0.3)'}`, 
-              background: canStartBot ? 'rgba(255,68,85,0.1)' : 'rgba(148,163,184,0.05)', 
-              color: canStartBot ? '#ff4455' : '#94a3b8', 
-              cursor: canStartBot ? 'pointer' : 'not-allowed', 
-              fontWeight: 800, fontSize:'0.9rem', textTransform:'uppercase', letterSpacing:'0.05em'
+            <button onClick={handleStop} disabled={!isRunning} style={{ 
+              padding:'14px 32px', borderRadius:'16px', border:`1px solid ${isRunning ? '#ff4455' : '#334155'}`, 
+              background: isRunning ? 'rgba(255,68,85,0.15)' : 'rgba(51,65,85,0.05)', 
+              color: isRunning ? '#ff4455' : '#475569', 
+              cursor: isRunning ? 'pointer' : 'not-allowed', 
+              fontWeight: 900, fontSize:'0.9rem', textTransform:'uppercase', letterSpacing:'1px'
             }}>
-              ⏹ Stop bot
+              ⏹ STOP BOT
             </button>
           </div>
         </div>

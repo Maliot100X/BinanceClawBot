@@ -96,13 +96,18 @@ class CodexAgent:
         sess_path = BASE_DIR / "session.json"
         
         if not sess_path.exists():
+            logger.warning(f"AI Agent: session.json not found at {sess_path}")
             return None
             
         try:
             import json
             with open(sess_path, "r") as f:
-                return json.load(f)
-        except:
+                data = json.load(f)
+                if data.get("access_token"):
+                    logger.success(f"AI Agent: Loaded bridged session from {sess_path}")
+                return data
+        except Exception as e:
+            logger.error(f"AI Agent: Failed to read session.json: {e}")
             return None
 
     async def think(self, user_msg: str) -> str:
