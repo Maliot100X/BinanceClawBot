@@ -75,62 +75,88 @@ export default function DashboardPage() {
   const totalPnl = portfolio?.daily_pnl || 0
 
   return (
-    <div style={{ position:'relative' }}>
-      {!isBrainConnected && (
-        <div style={{ 
-          position:'absolute', top:0, left:0, right:0, bottom:0, 
-          background:'rgba(2,4,8,0.7)', backdropFilter:'blur(8px)', zIndex:50,
-          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-          borderRadius:'24px', border:'1px solid rgba(0,255,136,0.2)', padding:'20px'
-        }}>
-          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}}
-            style={{ textAlign:'center', background:'#0f172a', padding:'40px', borderRadius:'24px', border:'1px solid #00ff8833', boxShadow:'0 20px 50px rgba(0,0,0,0.5)' }}>
-            <div style={{ fontSize:'64px', marginBottom:'24px' }}>🛡️</div>
-            <h2 style={{ color:'white', marginBottom:'8px', fontSize:'1.8rem' }}>AI Brain Required</h2>
-            <p style={{ color:'#94a3b8', maxWidth:'350px', marginBottom:'32px', fontSize:'1rem', lineHeight:1.6 }}>
-              You are currently in <b>Preview Mode</b>. Connect your AI Brain (OpenAI Codex, Gemini, or Antigravity) to enable live signals and automated trading.
-            </p>
-            <Link href="/login" style={{ 
-              padding:'14px 40px', borderRadius:'14px', background:'#00ff88', color:'#020408', 
-              textDecoration:'none', fontWeight:800, fontSize:'1.1rem', display:'inline-block',
-              boxShadow:'0 0 20px rgba(0,255,136,0.3)'
-            }}>
-              Connect Now 🧠
-            </Link>
-          </motion.div>
-        </div>
-      )}
+    <>
+      {/* ── Floating Guide Bot ───────────────────────────────────────────── */}
+      <motion.div 
+        drag
+        whileHover={{ scale: 1.1 }}
+        style={{ 
+          position:'fixed', bottom:'30px', right:'30px', zIndex:1000,
+          width:'64px', height:'64px', borderRadius:'32px',
+          background:'linear-gradient(135deg, #00ff88 0%, #00ccff 100%)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:'32px', boxShadow:'0 10px 30px rgba(0,255,136,0.6)',
+          cursor:'pointer', border:'2px solid rgba(2,4,8,0.8)'
+        }}
+        onClick={() => {
+          toast('🤖 KaiNova AI: "The Brain is active. Check your logs if keys show as Missing."')
+          console.log("Floating Bot Clicked - Brain Status:", isBrainConnected)
+        }}
+      >
+        🧠
+        <motion.div 
+          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          style={{ position:'absolute', width:'100%', height:'100%', borderRadius:'32px', border:'2px solid #00ff88' }}
+        />
+      </motion.div>
 
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'32px', opacity: isBrainConnected?1:0.4 }}>
-        <div>
-          <h1 style={{ color:'white', fontSize:'1.8rem', fontWeight:800, margin:0 }}>📊 Dashboard Summary</h1>
-          <p style={{ color:'#64748b', fontSize:'0.9rem', marginTop:'6px' }}>
-            {!isBrainConnected ? 'Guest Preview Mode • KaiNova Simulation' : 
-             !isBinanceReady ? '⚠️ Binance Keys Missing (Check .env)' : 
-             status ? `✅ Engine Active • Binance: ${binanceKey}` : '⚠️ Backend offline'}
-          </p>
-        </div>
-        <div style={{ display:'flex', gap:'12px' }}>
-          <button onClick={handleStart} disabled={!canStartBot} style={{ 
-            padding:'12px 24px', borderRadius:'12px', border:`1px solid ${canStartBot ? 'rgba(0,255,136,0.3)' : 'rgba(148,163,184,0.3)'}`, 
-            background: canStartBot ? 'rgba(0,255,136,0.1)' : 'rgba(148,163,184,0.05)', 
-            color: canStartBot ? '#00ff88' : '#94a3b8', 
-            cursor: canStartBot ? 'pointer' : 'not-allowed', 
-            fontWeight: 700, fontSize:'0.85rem' 
+      <div style={{ position:'relative', minHeight:'100vh', paddingBottom:'100px' }}>
+        {!isBrainConnected && (
+          <div style={{ 
+            position:'absolute', top:0, left:0, right:0, bottom:0, 
+            background:'rgba(2,4,8,0.85)', backdropFilter:'blur(12px)', zIndex:50,
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+            borderRadius:'24px', border:'1px solid rgba(0,255,136,0.2)', padding:'20px'
           }}>
-            ▶ Start Bot
-          </button>
-          <button onClick={handleStop} disabled={!canStartBot} style={{ 
-            padding:'12px 24px', borderRadius:'12px', border:`1px solid ${canStartBot ? 'rgba(255,68,85,0.3)' : 'rgba(148,163,184,0.3)'}`, 
-            background: canStartBot ? 'rgba(255,68,85,0.1)' : 'rgba(148,163,184,0.05)', 
-            color: canStartBot ? '#ff4455' : '#94a3b8', 
-            cursor: canStartBot ? 'pointer' : 'not-allowed', 
-            fontWeight: 700, fontSize:'0.85rem' 
-          }}>
-            ⏹ Stop Bot
-          </button>
+            <motion.div initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}}
+              style={{ textAlign:'center', background:'#0f172a', padding:'40px', borderRadius:'24px', border:'1px solid #00ff8833', boxShadow:'0 40px 100px rgba(0,0,0,0.8)' }}>
+              <div style={{ fontSize:'64px', marginBottom:'24px' }}>🛡️</div>
+              <h2 style={{ color:'white', marginBottom:'8px', fontSize:'1.8rem' }}>AI Brain Connection Required</h2>
+              <p style={{ color:'#94a3b8', maxWidth:'380px', marginBottom:'32px', fontSize:'1rem', lineHeight:1.6 }}>
+                KaiNova is currently in <b>Safe Mode</b>. Connect your OpenAI or Gemini Brain via CLI to unlock live trading signals and portfolio execution.
+              </p>
+              <Link href="/login" style={{ 
+                padding:'14px 40px', borderRadius:'14px', background:'#00ff88', color:'#020408', 
+                textDecoration:'none', fontWeight:800, fontSize:'1.1rem', display:'inline-block',
+                boxShadow:'0 0 30px rgba(0,255,136,0.4)', transition:'0.3s'
+              }}>
+                Connect Brain 🧠
+              </Link>
+            </motion.div>
+          </div>
+        )}
+
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'32px', opacity: isBrainConnected?1:0.4 }}>
+          <div>
+            <h1 style={{ color:'white', fontSize:'1.8rem', fontWeight:800, margin:0 }}>📊 Dashboard Summary</h1>
+            <p style={{ color:'#64748b', fontSize:'0.9rem', marginTop:'6px' }}>
+              {!isBrainConnected ? 'Guest Preview Mode • KaiNova Simulation' : 
+               !isBinanceReady ? '⚠️ BINANCE KEYS MISSING (Check .env in root)' : 
+               status ? `✅ ENGINE LIVE • BINANCE: ${binanceKey}` : '⚠️ Backend offline'}
+            </p>
+          </div>
+          <div style={{ display:'flex', gap:'12px' }}>
+            <button onClick={handleStart} disabled={!canStartBot} style={{ 
+              padding:'14px 28px', borderRadius:'14px', border:`1px solid ${canStartBot ? 'rgba(0,255,136,0.4)' : 'rgba(148,163,184,0.3)'}`, 
+              background: canStartBot ? 'linear-gradient(135deg, rgba(0,255,136,0.2) 0%, rgba(0,204,255,0.1) 100%)' : 'rgba(148,163,184,0.05)', 
+              color: canStartBot ? '#00ff88' : '#94a3b8', 
+              cursor: canStartBot ? 'pointer' : 'not-allowed', 
+              fontWeight: 800, fontSize:'0.9rem', textTransform:'uppercase', letterSpacing:'0.05em'
+            }}>
+              ▶ Start engine
+            </button>
+            <button onClick={handleStop} disabled={!canStartBot} style={{ 
+              padding:'14px 28px', borderRadius:'14px', border:`1px solid ${canStartBot ? 'rgba(255,68,85,0.4)' : 'rgba(148,163,184,0.3)'}`, 
+              background: canStartBot ? 'rgba(255,68,85,0.1)' : 'rgba(148,163,184,0.05)', 
+              color: canStartBot ? '#ff4455' : '#94a3b8', 
+              cursor: canStartBot ? 'pointer' : 'not-allowed', 
+              fontWeight: 800, fontSize:'0.9rem', textTransform:'uppercase', letterSpacing:'0.05em'
+            }}>
+              ⏹ Stop bot
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* Stats Grid */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:'20px', marginBottom:'32px', opacity: session?1:0.4 }}>
@@ -193,6 +219,7 @@ export default function DashboardPage() {
           style={{ position:'absolute', width:'100%', height:'100%', borderRadius:'32px', border:'2px solid #00ff88' }}
         />
       </motion.div>
-    </div>
+      </div>
+    </>
   )
 }

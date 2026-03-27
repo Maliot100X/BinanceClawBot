@@ -1,6 +1,7 @@
 'use client'
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useBotStore } from '@/store/botStore'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Canvas } from '@react-three/fiber'
@@ -25,9 +26,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [systemStatus, setSystemStatus] = useState<'checking' | 'online' | 'offline'>('checking')
 
-  useEffect(() => { if (session) router.push('/dashboard') }, [session])
+  const { cliConnected, fetchCliStatus } = useBotStore()
+
+  useEffect(() => { if (session || cliConnected) router.push('/dashboard') }, [session, cliConnected])
 
   useEffect(() => {
+    fetchCliStatus()
     const checkStatus = async () => {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -102,10 +106,41 @@ export default function LoginPage() {
             Choose your AI reasoning engine to power the autonomous bot
           </p>
 
+          {/* Bridge CLI Session (High Priority Fix) */}
+          <div style={{ marginBottom: '24px' }}>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                if (cliConnected) router.push('/dashboard')
+                else toast.error('CLI Session not found. Please run: py start_all.py')
+              }}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '16px', cursor: 'pointer',
+                background: cliConnected ? 'linear-gradient(135deg, #00ff88 0%, #00d4ff 100%)' : 'rgba(255,255,255,0.05)',
+                border: cliConnected ? 'none' : '1px solid rgba(0,255,136,0.3)',
+                color: cliConnected ? '#020617' : '#00ff88',
+                fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                boxShadow: cliConnected ? '0 10px 30px rgba(0,255,136,0.4)' : 'none'
+              }}>
+              <span>{cliConnected ? '⚡ SYNC CLI BRAIN' : '🔍 SEARCHING FOR CLI...'}</span>
+              <span>🧠</span>
+            </motion.button>
+            <p style={{ color: '#475569', fontSize: '0.7rem', marginTop: '10px' }}>
+              Used `py start_all.py`? Click above to bridge your CLI session instantly.
+            </p>
+          </div>
+
+          <div style={{ margin: '24px 0', borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}>
+            <span style={{
+              position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)',
+              background: '#0a1628', padding: '0 12px', color: '#475569',
+              fontSize: '0.7rem', fontWeight: 600, letterSpacing: '1px'
+            }}>OR CHOOSE PROVIDER</span>
+          </div>
+
           {/* OAuth Providers */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {[
-              { provider: 'openai', label: 'Continue with OpenAI Codex', icon: '🤖', sub: 'Use your OpenAI Account' },
+              { provider: 'openai', label: 'Use OpenAI Codex', icon: '🤖', sub: 'Standard Browser OAuth' },
               { provider: 'google', label: 'Continue with Google', icon: '🟢', sub: 'Gemini · Antigravity OAuth' },
               { provider: 'github', label: 'Continue with GitHub', icon: '⚫', sub: 'Developer OAuth' },
             ].map(({ provider, label, icon, sub }) => (

@@ -44,15 +44,28 @@ _bot_running = False
 _scheduler_task = None
 _config: dict = {}
 
+# ── Helpers ──────────────────────────────────────────────────────────────────
 def check_cli_session():
-    """Check if session.json exists and is valid."""
-    try:
-        p = Path("session.json")
-        if p.exists():
-            data = json.loads(p.read_text())
-            return data.get("access_token") is not None
-    except: pass
+    sess_path = BASE_DIR / "session.json"
+    if sess_path.exists():
+        try:
+            with open(sess_path, "r") as f:
+                sess = json.load(f)
+                return bool(sess.get("access_token"))
+        except: return False
     return False
+
+@app.get("/api/diag")
+async def diagnostic():
+    env_path = BASE_DIR / ".env"
+    return {
+        "cwd": os.getcwd(),
+        "base_dir": str(BASE_DIR),
+        "env_exists": env_path.exists(),
+        "session_exists": (BASE_DIR / "session.json").exists(),
+        "binance_key_loaded": bool(os.environ.get("BINANCE_API_KEY") or settings.binance_api_key),
+        "openai_key_loaded": bool(os.environ.get("OPENAI_OAUTH_CLIENT_ID") or settings.openai_oauth_client_id),
+    }
 
 WATCHLIST = ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT",
              "ADAUSDT","DOTUSDT","AVAXUSDT","MATICUSDT","LINKUSDT"]
@@ -80,7 +93,13 @@ class ScanReq(BaseModel):
 
 # Explicitly load from settings into os.environ for client sync
 import os
-if settings.binance_api_key: os.environ["BINANCE_API_KEY"] = settings.binance_api_key
+logger.info(f"Checking for .env at: {BASE_DIR / '.env'}")
+if settings.binance_api_key: 
+    os.environ["BINANCE_API_KEY"] = settings.binance_api_key
+    logger.success(f"Backend loaded Binance Key: ***{settings.binance_api_key[-4:]}")
+else:
+    logger.warning("Backend: No Binance API Key found in settings/env")
+
 if settings.binance_secret_key: os.environ["BINANCE_SECRET_KEY"] = settings.binance_secret_key
 
 # ── Endpoints ────────────────────────────────────────────────────────────────

@@ -7,12 +7,14 @@ from __future__ import annotations
 import base64, hashlib, json, os, secrets, time, webbrowser, urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from config.settings import BASE_DIR
 from typing import Optional
 import httpx
 from loguru import logger
 
-TOKEN_DIR = Path.home() / ".config" / "bianceclawbot"
+TOKEN_DIR = BASE_DIR / ".tokens"
 TOKEN_DIR.mkdir(parents=True, exist_ok=True)
+CONFIG_FILE = TOKEN_DIR / "config.json"
 
 def _token_path(provider: str) -> Path:
     return TOKEN_DIR / f"{provider}_token.json"
@@ -56,9 +58,18 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
         else:
             self.wfile.write(b"Authentication failed.")
 
-    def log_message(self, format, *args): return
+    def log_message(self, format, *args): 
+        return
 
 class MultiOAuthManager:
+    def _load(self) -> dict:
+        if not CONFIG_FILE.exists(): return {}
+        try: return json.loads(CONFIG_FILE.read_text())
+        except: return {}
+
+    def _save(self, data: dict):
+        CONFIG_FILE.write_text(json.dumps(data, indent=2))
+
     def login(self, provider: str):
         cfg = PROVIDERS.get(provider)
         if not cfg: return logger.error(f"Unknown provider: {provider}")
@@ -109,8 +120,8 @@ class MultiOAuthManager:
                         "refresh_token": token.get("refresh_token"),
                         "expires_at": token.get("expires_at")
                     }
-                    # Save local session.json
-                    Path("session.json").write_text(json.dumps(session, indent=2))
+                    # Save to absolute project root for synchronization
+                    (BASE_DIR / "session.json").write_text(json.dumps(session, indent=2))
                     self.send_session(session)
 
                 logger.success(f"Successfully connected {provider}!")
@@ -176,6 +187,15 @@ class MultiOAuthManager:
         self._save(data)
 
     def best_token(self) -> tuple[Optional[str], Optional[str]]:
+        # Check absolute session.json first
+        sess_path = BASE_DIR / "session.json"
+        if sess_path.exists():
+            try:
+                sess = json.loads(sess_path.read_text())
+                if sess.get("access_token"):
+                    return "openai", sess["access_token"]
+            except: pass
+
         # Check OAuth first
         for provider in PROVIDERS:
             token = self.get_token(provider)
@@ -194,6 +214,10 @@ class MultiOAuthManager:
         for p in PROVIDERS:
             oauth_status[p] = self.get_token(p) is not None
         
+        # Check CLI session status
+        if (BASE_DIR / "session.json").exists():
+            oauth_status["openai"] = True
+
         # Add direct API key status
         api_keys = data.get("api_keys", {})
         for p, key in api_keys.items():

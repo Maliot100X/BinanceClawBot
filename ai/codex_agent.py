@@ -90,20 +90,30 @@ class CodexAgent:
     def __init__(self):
         self._history: list[dict] = []
 
+    async def _get_session(self) -> dict | None:
+        """Load tokens from the CLI session file."""
+        from config.settings import BASE_DIR
+        sess_path = BASE_DIR / "session.json"
+        
+        if not sess_path.exists():
+            return None
+            
+        try:
+            import json
+            with open(sess_path, "r") as f:
+                return json.load(f)
+        except:
+            return None
+
     async def think(self, user_msg: str) -> str:
         # Prioritize CLI-bridged session.json (OpenAI)
-        import os, json
         provider, token = None, None
         
-        if os.path.exists("session.json"):
-            try:
-                with open("session.json", "r") as f:
-                    sess = json.load(f)
-                    if sess.get("access_token"):
-                        provider = "openai"
-                        token = sess["access_token"]
-                        logger.info("Using bridged OpenAI session from session.json")
-            except: pass
+        sess = await self._get_session()
+        if sess and sess.get("access_token"):
+            provider = "openai"
+            token = sess["access_token"]
+            logger.info("Using bridged OpenAI session from session.json")
             
         if not token:
             provider, token = oauth.best_token()

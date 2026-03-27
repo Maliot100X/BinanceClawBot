@@ -6,13 +6,19 @@ from __future__ import annotations
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Force load .env from absolute root before pydantic reads it
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, override=True)
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=BASE_DIR / ".env",
+        env_file=env_path,
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
