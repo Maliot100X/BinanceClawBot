@@ -12,32 +12,48 @@ Set these in your Vercel project settings:
 - `GEMINI_OAUTH_CLIENT_SECRET`: From Google Cloud Console
 - `NEXT_PUBLIC_API_URL`: Your backend IP/domain:8000
 
----
+## 2. Professional CLI ('codex')
 
-## 2. CLI OAuth (Local Machine / CMD)
+BinanceClawBot provides a professional CLI for bot management and authentication.
 
-To connect your bots directly from the command line:
+### Authentication (Device-Auth Flow)
+Connect your AI brains directly from the terminal.
 
 ```powershell
-# 1. Install requirements
-pip install -r requirements.txt
+# Authenticate all providers (OpenAI, Gemini, Antigravity)
+py codex.py login --device-auth
 
-# 2. Connect OpenAI (Codex)
-# This will open your browser and use port 1455 for callback
-python oauth_connect.py openai
+# Authenticate specific provider
+py codex.py login --device-auth --provider openai
 
-# 3. Connect Gemini / Antigravity
-# This will use port 8085 / 8086 for callback
-python oauth_connect.py gemini
-python oauth_connect.py antigravity
+# Check connection status
+py codex.py status
+```
 
-# 4. Check status
-python oauth_connect.py status
+### Bot Control
+Manage the trading engine from the command line:
+
+```powershell
+py codex.py start
+py codex.py stop
 ```
 
 ---
 
-## 3. Deployment (Ubuntu)
+## 3. Web Dashboard (Vercel)
+
+The web dashboard is configured for production. 
+
+### Environment Variables
+Set these in your Vercel project settings:
+- `NEXTAUTH_SECRET`: Random string (e.g. `openssl rand -base64 32`)
+- `GOOGLE_CLIENT_ID`: From Google Cloud Console
+- `GITHUB_CLIENT_ID`: From GitHub Developer Settings
+- `NEXT_PUBLIC_API_URL`: Your backend IP/domain:8000
+
+---
+
+## 4. Deployment (Ubuntu)
 
 ```bash
 chmod +x deploy.sh
