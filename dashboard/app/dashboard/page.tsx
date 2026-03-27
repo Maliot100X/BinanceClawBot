@@ -76,32 +76,37 @@ export default function DashboardPage() {
  
    return (
     <>
-      {/* ── Floating Guide Bot ───────────────────────────────────────────── */}
       <motion.div 
         drag
-        whileHover={{ scale: 1.1 }}
+        whileHover={{ scale: 1.15, rotate: 5 }}
+        whileTap={{ scale: 0.9 }}
         style={{ 
-          position:'fixed', bottom:'30px', right:'30px', zIndex:1000,
-          width:'80px', height:'80px', borderRadius:'40px',
+          position:'fixed', bottom:'40px', right:'40px', zIndex:9999,
+          width:'90px', height:'90px', borderRadius:'100%',
           background:'linear-gradient(135deg, #020617 0%, #0f172a 100%)',
           display:'flex', alignItems:'center', justifyContent:'center',
           flexDirection:'column',
-          fontSize:'24px', boxShadow:'0 10px 40px rgba(0,255,136,0.5)',
-          cursor:'pointer', border:'2px solid #00ff88',
+          boxShadow: isBrainConnected ? '0 0 50px rgba(0,255,136,0.6)' : '0 10px 40px rgba(0,0,0,0.5)',
+          cursor:'pointer', border: isBrainConnected ? '3px solid #00ff88' : '2px solid #334155',
           userSelect:'none'
         }}
         onClick={() => {
-          toast('🤖 KaiNova Brain: "Everything is synchronized. Use /ai in Telegram or Start the Engine below!"')
-          console.log("Guide Bot Triggered")
+          if(!isBrainConnected) {
+            toast('🛡️ KaiNova Brain: "Connect me via CLI to activate full autonomous powers!"')
+          } else {
+            toast('🟢 KaiNova Brain: "Sychronized and ready. I am scanning market data from Binance, Mobula, and CoinGecko!"')
+          }
         }}
       >
-        <div style={{ fontSize:'32px', marginBottom:'-5px' }}>🧠</div>
-        <div style={{ fontSize:'10px', color:'#00ff88', fontWeight:900, letterSpacing:'1px' }}>HELPER</div>
+        <div style={{ fontSize:'40px', marginBottom:'-5px' }}>🧠</div>
+        <div style={{ fontSize:'10px', color: isBrainConnected?'#00ff88':'#64748b', fontWeight:900, letterSpacing:'1.5px' }}>
+          {isBrainConnected ? 'BRAIN ACTIVE' : 'BRAIN OFFLINE'}
+        </div>
         {isBrainConnected && (
           <motion.div 
-            animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0.1, 0.6] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            style={{ position:'absolute', border:'2px solid #00ff88', width:'100%', height:'100%', borderRadius:'40px' }}
+            animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.1, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={{ position:'absolute', border:'4px solid #00ff88', width:'100%', height:'100%', borderRadius:'100%' }}
           />
         )}
       </motion.div>

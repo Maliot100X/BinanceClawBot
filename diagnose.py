@@ -21,8 +21,10 @@ def diagnose():
     # 2. Configuration Loading
     try:
         from config.settings import settings
+        import os
         print(f"⚙️ Binance API Key: {'✅ Loaded (***' + settings.binance_api_key[-4:] + ')' if settings.binance_api_key else '❌ Missing'}")
-        print(f"⚙️ Binance Secret: {'✅ Loaded' if settings.binance_secret_key else '❌ Missing'}")
+        print(f"⚙️ CoinGecko API: {'✅ Loaded' if (os.environ.get('COINGECKO_API') or settings.coingecko_api) else '❌ Missing'}")
+        print(f"⚙️ Mobula API Key: {'✅ Loaded' if (os.environ.get('MOBULA_API_KEY') or settings.mobula_api_key) else '❌ Missing'}")
         print(f"⚙️ OpenAI Client: {'✅ Loaded' if settings.openai_oauth_client_id else '❌ Missing'}")
     except Exception as e:
         print(f"❌ Settings Load Error: {e}")

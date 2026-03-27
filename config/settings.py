@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     dexscreener_api: str = Field(default="", alias="DEXSCREENER_API")
     birdeye_api: str = Field(default="", alias="BIRDEYE_API")
     coingecko_api: str = Field(default="", alias="COINGECKO_API")
+    mobula_api_key: str = Field(default="", alias="MOBULA_API_KEY")
 
     # ── Risk settings ──────────────────────────────────────
     max_position_size_pct: float = Field(default=5.0, alias="MAX_POSITION_SIZE_PCT")

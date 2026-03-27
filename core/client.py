@@ -22,8 +22,8 @@ class BinanceClient:
     def __init__(self) -> None:
         import os
         # Prioritize os.environ for dynamic updates from Dashboard
-        self.api_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
-        self.secret = os.environ.get("BINANCE_SECRET_KEY") or settings.binance_secret_key
+        self.api_key = (os.environ.get("BINANCE_API_KEY") or settings.binance_api_key or "").strip()
+        self.secret = (os.environ.get("BINANCE_SECRET_KEY") or settings.binance_secret_key or "").strip()
         self.testnet = settings.binance_testnet
         self.base = BINANCE_TESTNET_BASE if self.testnet else BINANCE_BASE
         self.futures_base = BINANCE_TESTNET_BASE if self.testnet else BINANCE_FUTURES_BASE
@@ -32,6 +32,8 @@ class BinanceClient:
         
         if self.api_key:
             logger.info(f"Binance Client initialized with key: ***{self.api_key[-4:]}")
+        else:
+            logger.warning("Binance Client: No API Key provided")
 
     async def test_authentication(self) -> bool:
         """Pings account endpoint to verify keys."""
@@ -51,6 +53,8 @@ class BinanceClient:
         return self._session
 
     def _sign(self, params: dict) -> dict:
+        if not self.secret:
+            raise ValueError("Binance Secret Key missing - cannot sign request")
         params["timestamp"] = int(time.time() * 1000)
         query = "&".join(f"{k}={v}" for k, v in params.items())
         sig = hmac.new(
@@ -59,26 +63,28 @@ class BinanceClient:
         params["signature"] = sig
         return params
 
-    async def _get(self, url: str, params: dict | None = None, signed: bool = False) -> Any:
+    async def _request(self, method: str, url: str, params: dict | None = None, signed: bool = False) -> Any:
         session = await self._get_session()
         p = self._sign(params or {}) if signed else (params or {})
-        async with session.get(url, params=p) as r:
-            r.raise_for_status()
-            return await r.json()
+        try:
+            async with session.request(method, url, params=p) as r:
+                if r.status == 401:
+                    logger.error(f"Binance 401 Unauthorized | URL: {url} | Signed: {signed}")
+                    logger.error(f"Response: {await r.text()}")
+                r.raise_for_status()
+                return await r.json()
+        except aiohttp.ClientResponseError as e:
+            logger.error(f"Binance API Error: {e.status} {e.message} for {url}")
+            raise
+
+    async def _get(self, url: str, params: dict | None = None, signed: bool = False) -> Any:
+        return await self._request("GET", url, params, signed)
 
     async def _post(self, url: str, params: dict | None = None, signed: bool = True) -> Any:
-        session = await self._get_session()
-        p = self._sign(params or {}) if signed else (params or {})
-        async with session.post(url, params=p) as r:
-            r.raise_for_status()
-            return await r.json()
+        return await self._request("POST", url, params, signed)
 
     async def _delete(self, url: str, params: dict | None = None, signed: bool = True) -> Any:
-        session = await self._get_session()
-        p = self._sign(params or {}) if signed else (params or {})
-        async with session.delete(url, params=p) as r:
-            r.raise_for_status()
-            return await r.json()
+        return await self._request("DELETE", url, params, signed)
 
     # ── Market Data ────────────────────────────────────────
     async def get_ticker(self, symbol: str) -> dict:

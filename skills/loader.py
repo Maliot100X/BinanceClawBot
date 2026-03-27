@@ -54,18 +54,22 @@ class SkillBase:
     def _headers(self) -> dict:
         return {"X-MBX-APIKEY": self._api_key, "User-Agent": self._ua, "Content-Type": "application/json"}
 
-    async def _get(self, url: str, params: dict | None = None, signed: bool = False) -> Any:
+    async def _get(self, url: str, params: dict | None = None, signed: bool = False, headers: dict | None = None) -> Any:
         p = dict(params or {})
         if signed: p = _sign(p, self._secret)
-        async with aiohttp.ClientSession(headers=self._headers()) as s:
+        h = self._headers()
+        if headers: h.update(headers)
+        async with aiohttp.ClientSession(headers=h) as s:
             async with s.get(url, params=p) as r:
                 r.raise_for_status()
                 return await r.json()
 
-    async def _post(self, url: str, params: dict | None = None, signed: bool = True) -> Any:
+    async def _post(self, url: str, params: dict | None = None, signed: bool = True, headers: dict | None = None) -> Any:
         p = dict(params or {})
         if signed: p = _sign(p, self._secret)
-        async with aiohttp.ClientSession(headers=self._headers()) as s:
+        h = self._headers()
+        if headers: h.update(headers)
+        async with aiohttp.ClientSession(headers=h) as s:
             async with s.post(url, params=p) as r:
                 r.raise_for_status()
                 return await r.json()
@@ -504,12 +508,41 @@ class TokenizedSecuritiesSkill(SkillBase):
 class CryptoMarketRankSkill(SkillBase):
     skill_name = "crypto-market-rank"
     _CG = "https://api.coingecko.com/api/v3"
+    
+    @property
+    def _cg_key(self) -> str:
+        import os
+        return (os.environ.get("COINGECKO_API") or settings.coingecko_api or "").strip()
+
     async def market_rank(self, limit=20, vs="usd"):
-        return await self._get(f"{self._CG}/coins/markets", {"vs_currency": vs, "order": "market_cap_desc", "per_page": limit, "page": 1})
+        h = {"x-cg-demo-api-key": self._cg_key} if self._cg_key else {}
+        return await self._get(f"{self._CG}/coins/markets", {"vs_currency": vs, "order": "market_cap_desc", "per_page": limit, "page": 1}, headers=h)
+
     async def trending(self):
-        d = await self._get(f"{self._CG}/search/trending"); return d.get("coins", [])
-    async def global_data(self): return await self._get(f"{self._CG}/global")
-    async def coin_detail(self, coin_id): return await self._get(f"{self._CG}/coins/{coin_id}")
+        h = {"x-cg-demo-api-key": self._cg_key} if self._cg_key else {}
+        d = await self._get(f"{self._CG}/search/trending", headers=h); return d.get("coins", [])
+
+    async def global_data(self): 
+        h = {"x-cg-demo-api-key": self._cg_key} if self._cg_key else {}
+        return await self._get(f"{self._CG}/global", headers=h)
+
+
+class MobulaSkill(SkillBase):
+    skill_name = "mobula"
+    _M = "https://api.mobula.io/api/1"
+    
+    @property
+    def _mobula_key(self) -> str:
+        import os
+        return (os.environ.get("MOBULA_API_KEY") or settings.mobula_api_key or "").strip()
+
+    async def market_data(self, asset: str):
+        h = {"Authorization": self._mobula_key} if self._mobula_key else {}
+        return await self._get(f"{self._M}/market/data", {"asset": asset}, headers=h)
+
+    async def price(self, symbol: str):
+        h = {"Authorization": self._mobula_key} if self._mobula_key else {}
+        return await self._get(f"{self._M}/market/multi-data", {"symbols": symbol}, headers=h)
 
 
 class MemeRushSkill(SkillBase):
@@ -589,6 +622,7 @@ def load_all_skills() -> dict[str, SkillBase]:
         "query_token_audit":             QueryTokenAuditSkill(),
         "query_token_info":              QueryTokenInfoSkill(),
         "trading_signal":                TradingSignalSkill(),
+        "mobula":                        MobulaSkill(),
     }
 
 # Singleton — import this everywhere

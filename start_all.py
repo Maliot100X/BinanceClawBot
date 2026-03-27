@@ -22,12 +22,19 @@ def check_port(port):
 def kill_port(port):
     if os.name == 'nt':
         try:
+            # First, kill by port usage
             output = subprocess.check_output(f"netstat -ano | findstr :{port}", shell=True).decode()
             for line in output.splitlines():
                 if "LISTENING" in line:
                     pid = line.strip().split()[-1]
-                    os.system(f"taskkill /F /PID {pid}")
+                    if pid and pid != "0":
+                        os.system(f"taskkill /F /PID {pid} /T >nul 2>&1")
         except: pass
+        
+        # Then, kill specifically known bot processes to be 100% sure
+        if port == 8000: # API / Bot port
+             os.system('taskkill /F /FI "COMMANDLINE eq *api_server.py*" /T >nul 2>&1')
+             os.system('taskkill /F /FI "COMMANDLINE eq *main.py*" /T >nul 2>&1')
     else:
         os.system(f"fuser -k {port}/tcp > /dev/null 2>&1")
 
