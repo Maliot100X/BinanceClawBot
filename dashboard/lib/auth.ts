@@ -13,6 +13,8 @@ export const authOptions: NextAuthOptions = {
         url: "https://auth.openai.com/oauth/authorize",
         params: { 
           scope: "openid profile email offline_access",
+          codex_cli_simplified_flow: "true",
+          originator: "bianceclawbot",
           prompt: "login"
         }
       },
