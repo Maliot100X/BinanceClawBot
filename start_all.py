@@ -85,7 +85,7 @@ def main():
 
     # SECTION 4: START API SERVER
     print("⏳ STEP 4: Starting API Server...")
-    api_proc = subprocess.Popen(f"{py} api_server.py", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    api_proc = subprocess.Popen(f"{py} api_server.py", shell=True) # Don't suppress error
     
     # Wait for API
     retries = 10
@@ -99,7 +99,7 @@ def main():
     
     # SECTION 5: START TELEGRAM BOT
     print("⏳ STEP 5: Starting Telegram Bot...")
-    bot_proc = subprocess.Popen(f"{py} main.py", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    bot_proc = subprocess.Popen(f"{py} main.py", shell=True) # Don't suppress error
     print("✅ Telegram bot active in background.")
 
     print("\n🚀 ALL SYSTEMS LIVE!")

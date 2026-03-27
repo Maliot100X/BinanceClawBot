@@ -14,7 +14,8 @@ from loguru import logger
 import uvicorn
 
 # Import bot modules
-from config.settings import settings
+import os
+from config.settings import settings, BASE_DIR
 from skills.loader import SKILLS
 from signals.indicators import compute_indicators
 from signals.signal_generator import generate_signal, Signal
