@@ -72,6 +72,17 @@ def main():
         input("Press Enter to exit...")
         return
 
+    # BRIDGE SESSION TO LOCAL DASHBOARD (Crucial for sync)
+    if os.path.exists("session.json"):
+        import json, httpx
+        try:
+            with open("session.json", "r") as f:
+                sess_data = json.load(f)
+                httpx.post("http://localhost:3000/api/connect", json=sess_data, timeout=5)
+                print("🔄 Synchronized CLI session with Local Dashboard.")
+        except Exception as e:
+            print(f"⚠️ Failed to sync session to dashboard: {e}")
+
     # SECTION 4: START API SERVER
     print("⏳ STEP 4: Starting API Server...")
     api_proc = subprocess.Popen(f"{py} api_server.py", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

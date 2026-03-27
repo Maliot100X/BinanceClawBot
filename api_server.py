@@ -29,7 +29,11 @@ app = FastAPI(title="BinanceClawBot API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://binance-claw-bot.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,6 +43,16 @@ app.add_middleware(
 _bot_running = False
 _scheduler_task = None
 _config: dict = {}
+
+def check_cli_session():
+    """Check if session.json exists and is valid."""
+    try:
+        p = Path("session.json")
+        if p.exists():
+            data = json.loads(p.read_text())
+            return data.get("access_token") is not None
+    except: pass
+    return False
 
 WATCHLIST = ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT",
              "ADAUSDT","DOTUSDT","AVAXUSDT","MATICUSDT","LINKUSDT"]
@@ -67,11 +81,14 @@ class ScanReq(BaseModel):
 # ── Endpoints ────────────────────────────────────────────────────────────────
 @app.get("/status")
 async def status():
+    o_status = oauth.status()
+    if check_cli_session():
+        o_status["openai"] = True
     return {
         "running": _bot_running,
         "dry_run": settings.dry_run,
         "scan_interval": settings.scan_interval_sec,
-        "oauth": oauth.status(),
+        "oauth": o_status,
         "risk": risk_manager.summary() if hasattr(risk_manager, 'summary') else {},
         "timestamp": datetime.utcnow().isoformat(),
         "skills_loaded": list(SKILLS.keys()),
@@ -107,7 +124,9 @@ async def health():
 async def portfolio():
     try:
         client = get_client()
-        if not client or not client.api_key: return {"balances": [], "connected": False}
+        # Allow if API Key OR CLI Session exists
+        if not (client and client.api_key) and not check_cli_session():
+             return {"balances": [], "connected": False}
         account = await client.get_account()
         balances = [b for b in account.get("balances", []) if float(b.get("free", 0)) > 0 or float(b.get("locked", 0)) > 0]
         return {"balances": balances[:20], "connected": True}
@@ -117,7 +136,8 @@ async def portfolio():
 @app.get("/positions")
 async def positions():
     try:
-        if not get_client().api_key: return {"positions": [], "connected": False}
+        if not get_client().api_key and not check_cli_session():
+             return {"positions": [], "connected": False}
         return {"positions": order_engine.position_summary(), "connected": True}
     except: return {"positions": [], "connected": False}
 
@@ -125,7 +145,8 @@ async def positions():
 async def signals():
     try:
         client = get_client()
-        if not client.api_key: return {"signals": []}
+        if not client.api_key and not check_cli_session():
+             return {"signals": []}
         results = []
         for sym in WATCHLIST[:6]:
             try:
