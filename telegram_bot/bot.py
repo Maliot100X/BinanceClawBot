@@ -243,14 +243,15 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     text = (
         f"{BANNER}\n\n"
-        f"{E['rocket']} <b>Welcome to KaiNova Trading Bot!</b>\n\n"
-        f"Your autonomous crypto trading assistant powered by:\n"
-        f"• 26 Binance Skills Hub APIs\n"
-        f"• OpenAI Codex AI reasoning engine\n"
-        f"• Advanced TA: RSI / MACD / EMA / VWAP\n"
-        f"• 4 strategies: Breakout / Momentum / Mean Reversion / Whale\n"
-        f"• 5% max position · 10% daily loss limit · 5x max leverage\n\n"
-        f"Use the menu or commands below to get started!"
+        f"🦾 <b>Welcome to KaiNova — Professional Autonomous Trading</b>\n\n"
+        f"You are now connected to the most advanced AI trading platform on Binance.\n\n"
+        f"<b>Integrated Stack:</b>\n"
+        f"• 🧠 <b>Codex Brain:</b> High-reasoning AI via secure PKCE OAuth\n"
+        f"• 📡 <b>26 Skills Hub:</b> Native Binance Spot/Futures/Margin/Algo\n"
+        f"• 🛡️ <b>Risk Guard:</b> Automated SL/TP, 10% Daily circuit breaker\n"
+        f"• 📊 <b>3D Dashboard:</b> Live monitoring at your fingertip\n\n"
+        f"🌐 <b>Dashboard:</b> http://localhost:3000\n\n"
+        f"<i>Use the menu below or type /help for a full command reference.</i>"
     )
     await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_main_menu())
 
