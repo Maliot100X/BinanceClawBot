@@ -3,7 +3,7 @@ import time
 import sys
 import os
 import shutil
-from loguru import logger
+import socket
 
 def get_python_cmd():
     for cmd in ["py", "python3", "python"]:
@@ -15,101 +15,82 @@ def get_python_cmd():
                 continue
     return sys.executable
 
-def check_dependencies(py):
-    deps = ["fastapi", "numpy", "pandas", "aiohttp", "python-telegram-bot", "pydantic"]
-    missing = []
-    for d in deps:
-        try:
-            # Try to import or check via pip
-            subprocess.check_call([py, "-c", f"import {d.replace('-','_')}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except:
-            missing.append(d)
-    
-    if missing:
-        logger.warning(f"⚠️ Missing dependencies: {', '.join(missing)}. Attempting auto-install...")
-        try:
-            subprocess.check_call([py, "-m", "pip", "install"] + missing)
-            logger.success("✅ Dependencies installed successfully.")
-        except Exception as e:
-            logger.error(f"❌ Failed to install dependencies: {e}")
-            return False
-    return True
+def check_port(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
 
-def run_command(cmd, cwd=None, name=""):
-    logger.info(f"Starting {name}...")
-    return subprocess.Popen(cmd, shell=True, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', errors='replace')
-
-def kill_ports(ports: list[int]):
-    import socket
-    import signal
+def kill_port(port):
     if os.name == 'nt':
-        for port in ports:
-            try:
-                output = subprocess.check_output(f"netstat -ano | findstr :{port}", shell=True).decode()
-                for line in output.splitlines():
-                    if "LISTENING" in line:
-                        pid = line.strip().split()[-1]
-                        logger.warning(f"Killing process {pid} on port {port}...")
-                        os.system(f"taskkill /F /PID {pid}")
-            except: pass
+        try:
+            output = subprocess.check_output(f"netstat -ano | findstr :{port}", shell=True).decode()
+            for line in output.splitlines():
+                if "LISTENING" in line:
+                    pid = line.strip().split()[-1]
+                    os.system(f"taskkill /F /PID {pid}")
+        except: pass
     else:
-        for port in ports:
-            os.system(f"fuser -k {port}/tcp > /dev/null 2>&1")
+        os.system(f"fuser -k {port}/tcp > /dev/null 2>&1")
 
 def main():
-    logger.info("🦾 KaiNova BinanceClawBot — Professional All-in-One Loader")
-    kill_ports([3000, 3001, 8000])
+    print("\n[START] Launching KaiNova BinanceClawBot system...")
     
-    if not os.path.exists(".env") and os.path.exists(".env.example"):
-        logger.warning("No .env found. Creating from .env.example...")
-        shutil.copy(".env.example", ".env")
+    # Port 3000 check
+    if check_port(3000):
+        print(f"⚠️ Port 3000 in use. Attempting to clear...")
+        kill_port(3000)
+        time.sleep(1)
 
     py = get_python_cmd()
-    logger.info(f"Using Python: {py}")
     
-    if not check_dependencies(py):
-        logger.error("Stop. Cannot proceed without dependencies.")
+    # 1. Start Web Server (Next.js Dashboard)
+    print("⏳ Starting Web Dashboard...")
+    dash_proc = subprocess.Popen("npm run dev", shell=True, cwd="dashboard", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    # Wait for dashboard
+    retries = 15
+    while retries > 0:
+        if check_port(3000):
+            print("[OK] Backend running on http://localhost:3000")
+            break
+        time.sleep(1)
+        retries -= 1
+    
+    if retries == 0:
+        print("❌ Dashboard failed to start on port 3000. Please check 'dashboard' folder and 'npm install'.")
+        # Don't exit silently
+        input("Press Enter to exit...")
         return
 
-    # 0. Check AI Status (Robust File-Based Check)
-    from pathlib import Path
-    config_dir = Path.home() / ".config" / "bianceclawbot"
-    has_token = any(config_dir.glob("*.json")) or any(config_dir.glob("*.txt"))
+    # 2. Start API Server (FastAPI)
+    print("⏳ Starting API Server...")
+    api_proc = subprocess.Popen(f"{py} api_server.py", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
-    if not has_token:
-        logger.warning("⚠️ No AI Brain connected. Access the Dashboard at http://localhost:3000 to link your AI account.")
-    else:
-        logger.success("✅ AI Brain tokens detected.")
+    # Wait for API
+    retries = 10
+    while retries > 0:
+        if check_port(8000):
+            break
+        time.sleep(1)
+        retries -= 1
+        
+    print("[OK] Ready for Codex login")
+    print("\n🚀 ACTION REQUIRED:")
+    print("👉 Run: py codex.py login --provider openai")
     
-    # 1. API Server
-    api_proc = run_command(f"{py} api_server.py", name="API Server (FastAPI)")
-    
-    # 2. Telegram Bot
-    bot_proc = run_command(f"{py} main.py", name="Telegram Bot (KaiNova)")
-    
-    # 3. Dashboard
-    dash_proc = run_command("npm run dev", cwd="dashboard", name="Next.js Dashboard")
-    
-    logger.success("📊 ALL SYSTEMS LIVE! Access Dashboard at http://localhost:3000 (or 3001 if busy)")
-    
+    # Keep running
     try:
         while True:
-            time.sleep(2)
-            if api_proc.poll() is not None:
-                logger.error(f"❌ API Server CRASHED: {api_proc.stderr.read()}")
-                break
-            if bot_proc.poll() is not None:
-                logger.error(f"❌ Telegram Bot CRASHED: {bot_proc.stderr.read()}")
-                break
+            time.sleep(5)
             if dash_proc.poll() is not None:
-                logger.error("❌ Dashboard CRASHED")
+                print("❌ Dashboard process stopped.")
                 break
-            
+            if api_proc.poll() is not None:
+                print("❌ API Server stopped.")
+                break
     except KeyboardInterrupt:
-        logger.info("Stopping all systems...")
-        api_proc.terminate()
-        bot_proc.terminate()
+        print("\n[STOP] Shutting down...")
         dash_proc.terminate()
+        api_proc.terminate()
 
 if __name__ == "__main__":
     main()

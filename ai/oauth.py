@@ -101,11 +101,40 @@ class MultiOAuthManager:
                 token = r.json()
                 token["expires_at"] = time.time() + token.get("expires_in", 3600)
                 _token_path(provider).write_text(json.dumps(token, indent=2))
+                
+                # SECTION 1: Capture and Bridge Session
+                if provider == "openai":
+                    session = {
+                        "access_token": token.get("access_token"),
+                        "refresh_token": token.get("refresh_token"),
+                        "expires_at": token.get("expires_at")
+                    }
+                    # Save local session.json
+                    Path("session.json").write_text(json.dumps(session, indent=2))
+                    self.send_session(session)
+
                 logger.success(f"Successfully connected {provider}!")
                 return token
             else:
                 logger.error(f"Token exchange failed: {r.text}")
         return None
+
+    def send_session(self, session: dict):
+        """Bridge CLI session to Web Dashboard"""
+        urls = [
+            "http://localhost:3000/api/connect",
+            "https://binance-claw-bot.vercel.app/api/connect"
+        ]
+        import httpx
+        for url in urls:
+            try:
+                # Use a small timeout as per requirements
+                r = httpx.post(url, json=session, timeout=2.0)
+                if r.status_code == 200:
+                    print(f"Sent session to {url}")
+                    break
+            except Exception:
+                continue
 
     def get_token(self, provider: str) -> Optional[dict]:
         path = _token_path(provider)

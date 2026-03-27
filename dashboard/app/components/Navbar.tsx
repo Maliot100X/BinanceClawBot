@@ -1,9 +1,24 @@
 'use client'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 
 export function Navbar() {
   const { data: session } = useSession()
+  const [cliConnected, setCliConnected] = useState(false)
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/connect/status')
+        const data = await res.json()
+        setCliConnected(data.connected)
+      } catch (e) {}
+    }
+    checkStatus()
+    const intv = setInterval(checkStatus, 5000)
+    return () => clearInterval(intv)
+  }, [])
 
   return (
     <nav style={{ 
@@ -11,10 +26,23 @@ export function Navbar() {
       display:'flex', alignItems:'center', justifyContent:'space-between', 
       padding:'0 24px', backdropFilter:'blur(10px)', position:'sticky', top:0, zIndex:100 
     }}>
-      <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-        <div style={{ fontSize:'24px' }}>🦾</div>
-        <div style={{ fontWeight:800, fontSize:'1.2rem', background:'linear-gradient(135deg,#00ff88,#00d4ff)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-          BinanceClawBot
+      <div style={{ display:'flex', alignItems:'center', gap:'20px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
+          <div style={{ fontSize:'24px' }}>🦾</div>
+          <div style={{ fontWeight:800, fontSize:'1.2rem', background:'linear-gradient(135deg,#00ff88,#00d4ff)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+            BinanceClawBot
+          </div>
+        </div>
+        
+        {/* CLI Connection Status */}
+        <div style={{ 
+          fontSize: '0.7rem', fontWeight: 800, letterSpacing: '1px',
+          padding: '4px 10px', borderRadius: '4px',
+          background: cliConnected ? 'rgba(0,255,136,0.1)' : 'rgba(255,68,68,0.1)',
+          color: cliConnected ? '#00ff88' : '#ff4444',
+          border: `1px solid ${cliConnected ? 'rgba(0,255,136,0.2)' : 'rgba(255,68,68,0.2)'}`
+        }}>
+          OPENAI CONNECTED: {cliConnected ? 'YES' : 'NO'}
         </div>
       </div>
       
