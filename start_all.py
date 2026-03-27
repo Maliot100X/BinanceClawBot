@@ -33,21 +33,33 @@ def kill_port(port):
 
 def main():
     print("\n[START] Launching KaiNova BinanceClawBot system...")
-    
-    # Port 3000 check
-    if check_port(3000):
-        print(f"⚠️ Port 3000 in use. Attempting to clear...")
-        kill_port(3000)
-        time.sleep(1)
-
     py = get_python_cmd()
-    
-    # 1. Start Web Server (Next.js Dashboard)
-    print("⏳ Starting Web Dashboard...")
+
+    # SECTION 1: INTERACTIVE LOGIN FIRST
+    print(f"\n🔑 STEP 1: Authenticating OpenAI Codex...")
+    login_cmd = [py, "codex.py", "login", "--provider", "openai"]
+    try:
+        # This call is interactive and will wait for the browser flow to complete
+        subprocess.call(login_cmd)
+        print("✅ CLI Login finalized.")
+    except Exception as e:
+        print(f"❌ Login failed: {e}")
+        input("Press Enter to exit...")
+        return
+
+    # SECTION 2: CLEAR PORTS
+    print("\n🧹 STEP 2: Cleaning up ports...")
+    for p in [3000, 8000]:
+        if check_port(p):
+            kill_port(p)
+            time.sleep(1)
+
+    # SECTION 3: START WEB SERVER
+    print("\n⏳ STEP 3: Starting Web Dashboard...")
     dash_proc = subprocess.Popen("npm run dev", shell=True, cwd="dashboard", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # Wait for dashboard
-    retries = 15
+    retries = 20
     while retries > 0:
         if check_port(3000):
             print("[OK] Backend running on http://localhost:3000")
@@ -56,13 +68,12 @@ def main():
         retries -= 1
     
     if retries == 0:
-        print("❌ Dashboard failed to start on port 3000. Please check 'dashboard' folder and 'npm install'.")
-        # Don't exit silently
+        print("❌ Dashboard failed to start on port 3000.")
         input("Press Enter to exit...")
         return
 
-    # 2. Start API Server (FastAPI)
-    print("⏳ Starting API Server...")
+    # SECTION 4: START API SERVER
+    print("⏳ STEP 4: Starting API Server...")
     api_proc = subprocess.Popen(f"{py} api_server.py", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # Wait for API
@@ -73,11 +84,10 @@ def main():
         time.sleep(1)
         retries -= 1
         
-    print("[OK] Ready for Codex login")
-    print("\n🚀 ACTION REQUIRED:")
-    print("👉 Run: py codex.py login --provider openai")
+    print("[OK] Ready for Codex login (Synchronized)")
+    print("\n🚀 ALL SYSTEMS LIVE!")
+    print("👉 Dashboard is active at http://localhost:3000")
     
-    # Keep running
     try:
         while True:
             time.sleep(5)

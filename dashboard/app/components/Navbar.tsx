@@ -36,11 +36,13 @@ export function Navbar() {
         
         {/* CLI Connection Status */}
         <div style={{ 
-          fontSize: '0.7rem', fontWeight: 800, letterSpacing: '1px',
-          padding: '4px 10px', borderRadius: '4px',
-          background: cliConnected ? 'rgba(0,255,136,0.1)' : 'rgba(255,68,68,0.1)',
+          fontSize: '0.75rem', fontWeight: 900, letterSpacing: '1.5px',
+          padding: '6px 14px', borderRadius: '6px',
+          background: cliConnected ? 'rgba(0,255,136,0.15)' : 'rgba(255,68,68,0.15)',
           color: cliConnected ? '#00ff88' : '#ff4444',
-          border: `1px solid ${cliConnected ? 'rgba(0,255,136,0.2)' : 'rgba(255,68,68,0.2)'}`
+          border: `1px solid ${cliConnected ? '#00ff88' : '#ff4444'}`,
+          boxShadow: cliConnected ? '0 0 15px rgba(0,255,136,0.2)' : 'none',
+          transition: 'all 0.3s ease'
         }}>
           OPENAI CONNECTED: {cliConnected ? 'YES' : 'NO'}
         </div>

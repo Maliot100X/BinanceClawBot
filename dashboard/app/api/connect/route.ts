@@ -1,31 +1,24 @@
 import { NextResponse } from 'next/server'
+import fs from 'fs'
+import path from 'path'
 
-// Interface for the global session object
-interface OpenAISession {
-  access_token: string
-  refresh_token: string
-  expires_at: number
-}
-
-// Ensure global type safety
-declare global {
-  var openaiSession: OpenAISession | undefined
-}
+const SESSION_FILE = path.join(process.cwd(), '..', 'session.json')
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { access_token, refresh_token, expires_at } = body
 
-    // Store in global for local testing as requested by user
-    // Note: This persists in local development but not in serverless prod
-    global.openaiSession = {
+    const session = {
       access_token,
       refresh_token,
       expires_at
     }
 
-    console.log("✅ OpenAPI Session bridged from CLI")
+    // Save to file for persistence across requests/reloads
+    fs.writeFileSync(SESSION_FILE, JSON.stringify(session, null, 2))
+
+    console.log("✅ OpenAI Session saved to session.json via CLI bridge")
     return NextResponse.json({ success: true })
   } catch (e: any) {
     console.error("[Connect API Error]", e.message)
