@@ -1,0 +1,17 @@
+services:
+  kaanova:
+    build: .
+    container_name: kaanova-trader
+    restart: always
+    env_file: .env
+    volumes:
+      - ./logs:/app/logs
+      - ./.oauth_tokens.json:/app/.oauth_tokens.json
+      - ./.oauth_openai.json:/app/.oauth_openai.json
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
