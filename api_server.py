@@ -78,17 +78,28 @@ class ScanReq(BaseModel):
     symbols: list[str] = WATCHLIST
 
 
+# Explicitly load from settings into os.environ for client sync
+import os
+if settings.binance_api_key: os.environ["BINANCE_API_KEY"] = settings.binance_api_key
+if settings.binance_secret_key: os.environ["BINANCE_SECRET_KEY"] = settings.binance_secret_key
+
 # ── Endpoints ────────────────────────────────────────────────────────────────
 @app.get("/status")
 async def status():
     o_status = oauth.status()
     if check_cli_session():
         o_status["openai"] = True
+    
+    # Add Binance key status for verification
+    binance_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
+    b_status = f"***{binance_key[-4:]}" if binance_key else "Missing"
+
     return {
         "running": _bot_running,
         "dry_run": settings.dry_run,
         "scan_interval": settings.scan_interval_sec,
         "oauth": o_status,
+        "binance_key": b_status,
         "risk": risk_manager.summary() if hasattr(risk_manager, 'summary') else {},
         "timestamp": datetime.utcnow().isoformat(),
         "skills_loaded": list(SKILLS.keys()),
@@ -125,7 +136,8 @@ async def portfolio():
     try:
         client = get_client()
         # Allow if API Key OR CLI Session exists
-        if not (client and client.api_key) and not check_cli_session():
+        binance_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
+        if not binance_key and not check_cli_session():
              return {"balances": [], "connected": False}
         account = await client.get_account()
         balances = [b for b in account.get("balances", []) if float(b.get("free", 0)) > 0 or float(b.get("locked", 0)) > 0]
@@ -136,7 +148,8 @@ async def portfolio():
 @app.get("/positions")
 async def positions():
     try:
-        if not get_client().api_key and not check_cli_session():
+        binance_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
+        if not binance_key and not check_cli_session():
              return {"positions": [], "connected": False}
         return {"positions": order_engine.position_summary(), "connected": True}
     except: return {"positions": [], "connected": False}
@@ -145,7 +158,8 @@ async def positions():
 async def signals():
     try:
         client = get_client()
-        if not client.api_key and not check_cli_session():
+        binance_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
+        if not binance_key and not check_cli_session():
              return {"signals": []}
         results = []
         for sym in WATCHLIST[:6]:
@@ -165,7 +179,8 @@ async def signals():
 async def scan(req: ScanReq):
     try:
         client = get_client()
-        if not client.api_key: return {"results": []}
+        binance_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
+        if not binance_key and not check_cli_session(): return {"results": []}
         results = []
         for sym in req.symbols[:10]:
             try:
@@ -191,12 +206,10 @@ async def ticker(symbol: str):
 
 @app.post("/binance/config")
 async def binance_config(cfg: BinanceConfig):
-    import os
     os.environ["BINANCE_API_KEY"] = cfg.api_key
     os.environ["BINANCE_SECRET_KEY"] = cfg.secret_key
-    # Reset client
-    import core.client as cc
-    cc._client = None
+    # Force reset client
+    get_client(force_new=True)
     return {"status": "ok", "message": "Binance keys configured"}
 
 class AIConfig(BaseModel):

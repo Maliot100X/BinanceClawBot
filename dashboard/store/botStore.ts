@@ -25,6 +25,7 @@ interface BotState {
   chatWithAI: (msg: string) => Promise<string>
   setTelegramConfig: (token: string, chatId: string) => Promise<void>
   setBinanceConfig: (key: string, secret: string) => Promise<void>
+  binanceKey: string | null
   cliConnected: boolean
   fetchCliStatus: () => Promise<void>
 }
@@ -39,12 +40,18 @@ export const useBotStore = create<BotState>((set, get) => ({
   authStatus: {},
   loading: false,
   error: null,
+  binanceKey: null,
   cliConnected: false,
 
   fetchStatus: async () => {
     try {
       const r = await botApi.status()
-      set({ status: r.data, isRunning: r.data?.running === true, error: null })
+      set({ 
+        status: r.data, 
+        isRunning: r.data?.running === true, 
+        binanceKey: r.data?.binance_key || null,
+        error: null 
+      })
     } catch { set({ error: 'Backend offline - start main.py first' }) }
   },
 

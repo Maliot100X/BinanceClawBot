@@ -34,14 +34,22 @@ class SkillBase:
     skill_name: str = "base"
 
     def __init__(self):
-        self._api_key = settings.binance_api_key
-        self._secret  = settings.binance_secret_key
         self._ua      = f"binance-{self.skill_name}/1.1.0 (Skill)"
         skill_path    = SKILLS_HUB / "binance" / self.skill_name / "SKILL.md"
         if not skill_path.exists():
             skill_path = SKILLS_HUB / "binance-web3" / self.skill_name / "SKILL.md"
         self.skill_md = skill_path.read_text(encoding="utf-8") if skill_path.exists() else ""
         logger.debug(f"Loaded skill: {self.skill_name}")
+
+    @property
+    def _api_key(self) -> str:
+        import os
+        return os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
+
+    @property
+    def _secret(self) -> str:
+        import os
+        return os.environ.get("BINANCE_SECRET_KEY") or settings.binance_secret_key
 
     def _headers(self) -> dict:
         return {"X-MBX-APIKEY": self._api_key, "User-Agent": self._ua, "Content-Type": "application/json"}

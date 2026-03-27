@@ -20,8 +20,10 @@ class BinanceClient:
     """Async Binance REST client with HMAC-SHA256 signing."""
 
     def __init__(self) -> None:
-        self.api_key = settings.binance_api_key
-        self.secret = settings.binance_secret_key
+        import os
+        # Prioritize os.environ for dynamic updates from Dashboard
+        self.api_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
+        self.secret = os.environ.get("BINANCE_SECRET_KEY") or settings.binance_secret_key
         self.testnet = settings.binance_testnet
         self.base = BINANCE_TESTNET_BASE if self.testnet else BINANCE_BASE
         self.futures_base = BINANCE_TESTNET_BASE if self.testnet else BINANCE_FUTURES_BASE
@@ -152,8 +154,8 @@ class BinanceClient:
 _client: BinanceClient | None = None
 
 
-def get_client() -> BinanceClient:
+def get_client(force_new: bool = False) -> BinanceClient:
     global _client
-    if _client is None:
+    if _client is None or force_new:
         _client = BinanceClient()
     return _client

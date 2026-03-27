@@ -25,15 +25,40 @@ const genChart = () => Array.from({length:24},(_,i)=>({h:`${i}h`, v:60000+Math.r
 
 export default function DashboardPage() {
   const { data: session } = useSession()
-  const { status, isRunning, fetchStatus, fetchPortfolio, portfolio, fetchSignals, signals, startBot, stopBot, fetchPositions, positions, cliConnected, fetchCliStatus } = useBotStore()
+  const { 
+    isRunning, 
+    startBot, 
+    stopBot, 
+    fetchStatus, 
+    status, 
+    cliConnected, 
+    fetchCliStatus,
+    binanceKey,
+    portfolio,
+    fetchPortfolio,
+    positions,
+    fetchPositions,
+    signals,
+    fetchSignals 
+  } = useBotStore()
 
   useEffect(() => {
-    fetchStatus(); fetchPortfolio(); fetchSignals(); fetchPositions(); fetchCliStatus()
-    const interval = setInterval(() => { fetchStatus(); fetchSignals(); fetchCliStatus() }, 5000)
+    fetchStatus()
+    fetchCliStatus()
+    fetchPortfolio()
+    fetchPositions()
+    fetchSignals()
+    const interval = setInterval(() => {
+      fetchStatus()
+      fetchCliStatus()
+      fetchSignals()
+    }, 5000)
     return () => clearInterval(interval)
   }, [])
 
   const isBrainConnected = !!session || cliConnected
+  const isBinanceReady = binanceKey && binanceKey !== "Missing"
+  const canStartBot = isBrainConnected && isBinanceReady
 
   const handleStart = async () => {
     if (!isBrainConnected) { toast.error('Please Connect Brain first!'); return }
@@ -80,21 +105,27 @@ export default function DashboardPage() {
         <div>
           <h1 style={{ color:'white', fontSize:'1.8rem', fontWeight:800, margin:0 }}>📊 Dashboard Summary</h1>
           <p style={{ color:'#64748b', fontSize:'0.9rem', marginTop:'6px' }}>
-            {!isBrainConnected ? 'Guest Preview Mode • KaiNova Simulation' : status ? 'Backend connected' : '⚠️ Backend offline'}
+            {!isBrainConnected ? 'Guest Preview Mode • KaiNova Simulation' : 
+             !isBinanceReady ? '⚠️ Binance Keys Missing (Check .env)' : 
+             status ? `✅ Engine Active • Binance: ${binanceKey}` : '⚠️ Backend offline'}
           </p>
         </div>
         <div style={{ display:'flex', gap:'12px' }}>
-          <button onClick={handleStart} disabled={!session} style={{ 
-            padding:'12px 24px', borderRadius:'12px', border:'1px solid rgba(0,255,136,0.3)', 
-            background:'rgba(0,255,136,0.1)', color:'#00ff88', cursor:session?'pointer':'not-allowed', 
-            fontWeight:700, fontSize:'0.85rem' 
+          <button onClick={handleStart} disabled={!canStartBot} style={{ 
+            padding:'12px 24px', borderRadius:'12px', border:`1px solid ${canStartBot ? 'rgba(0,255,136,0.3)' : 'rgba(148,163,184,0.3)'}`, 
+            background: canStartBot ? 'rgba(0,255,136,0.1)' : 'rgba(148,163,184,0.05)', 
+            color: canStartBot ? '#00ff88' : '#94a3b8', 
+            cursor: canStartBot ? 'pointer' : 'not-allowed', 
+            fontWeight: 700, fontSize:'0.85rem' 
           }}>
             ▶ Start Bot
           </button>
-          <button onClick={handleStop} disabled={!session} style={{ 
-            padding:'12px 24px', borderRadius:'12px', border:'1px solid rgba(255,68,85,0.3)', 
-            background:'rgba(255,68,85,0.1)', color:'#ff4455', cursor:session?'pointer':'not-allowed', 
-            fontWeight:700, fontSize:'0.85rem' 
+          <button onClick={handleStop} disabled={!canStartBot} style={{ 
+            padding:'12px 24px', borderRadius:'12px', border:`1px solid ${canStartBot ? 'rgba(255,68,85,0.3)' : 'rgba(148,163,184,0.3)'}`, 
+            background: canStartBot ? 'rgba(255,68,85,0.1)' : 'rgba(148,163,184,0.05)', 
+            color: canStartBot ? '#ff4455' : '#94a3b8', 
+            cursor: canStartBot ? 'pointer' : 'not-allowed', 
+            fontWeight: 700, fontSize:'0.85rem' 
           }}>
             ⏹ Stop Bot
           </button>
