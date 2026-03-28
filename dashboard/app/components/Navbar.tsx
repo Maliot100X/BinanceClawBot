@@ -38,7 +38,7 @@ export function Navbar() {
           boxShadow: cliConnected ? '0 0 15px rgba(0,255,136,0.2)' : 'none',
           transition: 'all 0.3s ease'
         }}>
-          OPENAI CONNECTED: {cliConnected ? 'YES' : 'NO'}
+          AI ENGINE CONNECTED: {cliConnected ? 'YES' : 'NO'}
         </div>
       </div>
       

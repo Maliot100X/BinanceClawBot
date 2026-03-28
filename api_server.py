@@ -40,6 +40,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {
+        "bot": "KaiNova BinanceClawBot",
+        "status": "ONLINE",
+        "version": "1.0.0",
+        "engine": "FASTAPI",
+        "endpoints": ["/ai/chat", "/health", "/api/status", "/api/diag"]
+    }
+
+@app.get("/api/status")
+async def get_system_status():
+    from ai.oauth import oauth
+    provider, _ = oauth.best_token()
+    return {
+        "brain": {
+            "status": oauth.status(),
+            "active_provider": provider or "none"
+        },
+        "binance": bool(os.environ.get("BINANCE_API_KEY") or settings.binance_api_key),
+        "bot_active": _bot_running,
+        "time": datetime.utcnow().isoformat()
+    }
+
 # ── State ────────────────────────────────────────────────────────────────────
 _bot_running = False
 _scheduler_task = None
@@ -59,13 +83,16 @@ def check_cli_session():
 @app.get("/api/diag")
 async def diagnostic():
     env_path = BASE_DIR / ".env"
+    from ai.oauth import oauth
+    provider, _ = oauth.best_token()
     return {
         "cwd": os.getcwd(),
         "base_dir": str(BASE_DIR),
         "env_exists": env_path.exists(),
         "session_exists": (BASE_DIR / "session.json").exists(),
         "binance_key_loaded": bool(os.environ.get("BINANCE_API_KEY") or settings.binance_api_key),
-        "openai_key_loaded": bool(os.environ.get("OPENAI_OAUTH_CLIENT_ID") or settings.openai_oauth_client_id),
+        "active_ai_provider": provider if provider else "None",
+        "ai_auth_status": oauth.status()
     }
 
 WATCHLIST = ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT",
@@ -123,6 +150,10 @@ async def status():
         "risk": risk_manager.summary() if hasattr(risk_manager, 'summary') else {},
         "timestamp": datetime.utcnow().isoformat(),
         "skills_loaded": list(SKILLS.keys()),
+        "brain": {
+            "provider": (oauth.best_token()[0] or "none").upper(),
+            "model": codex_agent._model
+        }
     }
 
 @app.post("/bot/start")
@@ -292,10 +323,9 @@ async def trade_history():
         return {"trades": t}
     except Exception: return {"trades": []}
 
-@app.get("/health")
-async def health():
-    return {"status": "ok", "time": datetime.utcnow().isoformat()}
 
 
 if __name__ == "__main__":
-    uvicorn.run("api_server:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+    # Use app object directly to avoid double-initialization from string imports
+    # Bind to 127.0.0.1 for maximum stability on Windows IPv4/IPv6 stacks
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False, log_level="info")

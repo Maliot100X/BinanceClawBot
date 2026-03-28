@@ -1,19 +1,27 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
-const SESSION_FILE = path.join(process.cwd(), '..', 'session.json')
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    if (fs.existsSync(SESSION_FILE)) {
-      const data = fs.readFileSync(SESSION_FILE, 'utf8')
-      const session = JSON.parse(data)
-      return NextResponse.json({
-        connected: !!(session && session.access_token)
-      })
+    const res = await fetch('http://127.0.0.1:8000/api/status', {
+        headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+        },
+        cache: 'no-store'
+    });
+    
+    if (res.ok) {
+        const data = await res.json();
+        // Correct path: data.brain.status
+        const statusObj = data.brain?.status || data.oauth || {};
+        const isConnected = Object.values(statusObj).some(v => v === true);
+        return NextResponse.json({ connected: isConnected });
     }
-  } catch (e) {}
+  } catch (e: any) {
+    console.error("[Python Sync Error] Failed to reach FastAPI backend:", e.message);
+  }
 
-  return NextResponse.json({ connected: false })
+  return NextResponse.json({ connected: false });
 }

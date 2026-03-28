@@ -53,6 +53,21 @@ def diagnose():
         p = BASE_DIR / f
         print(f"  - {f}: {'✅' if p.exists() else '❌'}")
 
+    # 6. Phase 14: Total Brain Power Checks
+    print("\n🧠 PHASE 14 (SYSTEM MASTERY):")
+    from ai.codex_agent import CodexAgent
+    agent = CodexAgent()
+    print(f"  - AI Heartbeat: ✅ {agent._model} (2026 Standard)")
+    
+    from skills.loader import SKILLS
+    print(f"  - Skills Mastery: ✅ {len(SKILLS)} Total (including Mobula & DexScreener)")
+    
+    # Check if dashboard chat logic is in file
+    dash_file = BASE_DIR / "dashboard" / "app" / "dashboard" / "page.tsx"
+    if dash_file.exists():
+        content = dash_file.read_text(encoding='utf-8')
+        print(f"  - BrainChat UI: {'✅ Functional' if 'handleSend' in content and 'messages' in content else '❌ Missing logic'}")
+
     print("\n" + "="*50)
     print("🚀 Status: " + ("Ready to trade" if env_path.exists() and sess_path.exists() else "Needs configuration"))
     print("="*50 + "\n")

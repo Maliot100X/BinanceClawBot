@@ -40,6 +40,7 @@ E = {
     "usdt":   "💵", "spark":  "✨", "gem":    "💎", "signal": "📡",
     "globe":  "🌐", "trade":  "💱", "earn":   "🏦", "news":   "📰",
     "pnl":    "💹", "risk":   "🛡️",  "ai":     "🤖", "link":   "🔗",
+    "model":  "🧬",
 }
 
 BANNER = (
@@ -53,7 +54,10 @@ AUTHORIZED_USERS = {int(settings.telegram_chat_id)}
 
 def _is_authorized(update: Update) -> bool:
     uid = update.effective_user.id if update.effective_user else None
-    return uid in AUTHORIZED_USERS
+    authorized = uid in AUTHORIZED_USERS
+    if not authorized:
+        logger.warning(f"Unauthorized access attempt from user ID: {uid}")
+    return authorized
 
 
 def _fmt_price(v: float) -> str:
@@ -103,7 +107,7 @@ def _main_menu() -> InlineKeyboardMarkup:
             InlineKeyboardButton(f"{E['trade']} Quick Sell", callback_data="cmd_quicksell"),
         ],
         [
-            InlineKeyboardButton(f"{E['key']} Auth OpenAI", callback_data="cmd_auth"),
+            InlineKeyboardButton(f"{E['model']} Models", callback_data="cmd_models"),
             InlineKeyboardButton(f"{E['globe']} Status", callback_data="cmd_status"),
         ],
     ])
@@ -223,16 +227,20 @@ async def _fmt_status() -> str:
     ai_ok = oauth.is_authenticated()
     bot_active = risk_manager.is_active()
 
+    ai_prov_name = str(oauth.best_token()[0]).upper() if ai_ok else "Unknown"
+    ai_status = f"{E['brain']} <b>BRAIN ACTIVE</b> ({ai_prov_name})" if ai_ok else f"⚠️ <b>BRAIN OFFLINE</b> (Run 'py provider_setup.py')"
+
     return (
         f"{BANNER}\n\n"
         f"{E['globe']} <b>System Status</b>\n\n"
-        f"{'✅' if binance_ok else '❌'} Binance API: {'Connected' if binance_ok else 'Disconnected'}\n"
-        f"   Server time: {server_time}\n"
-        f"{'✅' if ai_ok else '⚠️'} OpenAI OAuth: {'Authenticated' if ai_ok else 'Not authenticated'}\n"
-        f"{'✅' if bot_active else '🛑'} Trading Bot: {'Active' if bot_active else 'Paused'}\n"
-        f"{E['risk']} Risk Guard: Always ON\n"
-        f"{E['clock']} Scan interval: {settings.scan_interval_sec}s\n"
-        f"Mode: {'🔵 DRY RUN' if settings.dry_run else '🟢 LIVE'}"
+        f"{'✅' if binance_ok else '❌'} <b>Binance API:</b> {'CONNECTED' if binance_ok else 'DISCONNECTED'}\n"
+        f"   🕒 Server Time: {server_time}\n\n"
+        f"{ai_status}\n"
+        f"   🧠 Intelligence: {ai_prov_name} Autonomous Engine\n\n"
+        f"{'✅' if bot_active else '🛑'} <b>Trading Engine:</b> {'AUTONOMOUS' if bot_active else 'PAUSED'}\n"
+        f"   🛡️ Risk Guard: <b>100% SECURE</b>\n"
+        f"   ⏰ Scan Interval: {settings.scan_interval_sec}s\n"
+        f"   📊 Mode: <b>{'🔵 DRY RUN' if settings.dry_run else '🟢 LIVE'}</b>"
     )
 
 
@@ -246,7 +254,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"🦾 <b>Welcome to KaiNova — Professional Autonomous Trading</b>\n\n"
         f"You are now connected to the most advanced AI trading platform on Binance.\n\n"
         f"<b>Integrated Stack:</b>\n"
-        f"• 🧠 <b>Codex Brain:</b> High-reasoning AI via secure PKCE OAuth\n"
+        f"• 🧠 <b>Dynamic Brain:</b> Multi-Provider Autonomous Intelligence\n"
         f"• 📡 <b>26 Skills Hub:</b> Native Binance Spot/Futures/Margin/Algo\n"
         f"• 🛡️ <b>Risk Guard:</b> Automated SL/TP, 10% Daily circuit breaker\n"
         f"• 📊 <b>3D Dashboard:</b> Live monitoring at your fingertip\n\n"
@@ -290,9 +298,10 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"/earn — Simple earn products\n"
         f"/convert BTC USDT 0.01 — Get convert quote\n\n"
         f"<b>AI</b>\n"
-        f"/ai <question> — Ask the Codex AI\n"
+        f"/ai <question> — Ask the AI\n"
         f"/analyze BTCUSDT — AI deep analysis\n"
-        f"/auth — Authenticate with OpenAI OAuth\n\n"
+        f"/models — List & switch AI models\n"
+        f"/auth — Provider Authentication status\n\n"
         f"<b>Info</b>\n"
         f"/risk — Risk management status\n"
         f"/menu — Show interactive menu\n"
@@ -565,7 +574,7 @@ async def cmd_signals(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(update):
         return
     msg = await update.message.reply_text(f"{E['signal']} Generating signals...")
-    data = await _scan_market(DEFAULT_SYMBOLS)
+    data = await _scan(DEFAULT_SYMBOLS)
     results = data.get("scan_results", [])
     buys = [r for r in results if r["signal"] == "BUY"]
     sells = [r for r in results if r["signal"] == "SELL"]
@@ -674,6 +683,28 @@ async def cmd_analyze(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def cmd_models(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(update):
+        return
+    provider, _ = oauth.best_token()
+    msg = await update.message.reply_text(f"🤖 <b>Fetching models for {provider}...</b>", parse_mode=ParseMode.HTML)
+    try:
+        models = await codex_agent.fetch_available_models()
+        if not models:
+            await msg.edit_text(f"❌ Failed to fetch models for {provider}.")
+            return
+            
+        model_list = "\n".join([f"• <code>{mod}</code>" for mod in models[:20]])
+        text = (
+            f"🤖 <b>Active Provider:</b> {str(provider).upper()}\n"
+            f"🎯 <b>Current Model:</b> {codex_agent._model}\n\n"
+            f"<i>Available Models:</i>\n{model_list}\n\n"
+            f"<i>Switch with:</i> <code>/ai .model &lt;name&gt;</code>"
+        )
+        await msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=_back_button())
+    except Exception as e:
+        await msg.edit_text(f"❌ Error fetching models: {e}")
+
 async def cmd_ai(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(update):
         return
@@ -682,10 +713,26 @@ async def cmd_ai(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"{E['warn']} Usage: /ai <your question>")
         return
     question = " ".join(args)
-    msg = await update.message.reply_text(f"{E['brain']} Thinking...")
+    
+    # Handle model switching via .model/models/model shortcut
+    cmd = question.split()[0].lower()
+    if cmd in [".model", ".models", "model", "models"]:
+        m = question.replace(cmd, "").strip()
+        if not m:
+             return await cmd_models(update, ctx)
+             
+        codex_agent.set_model(m)
+        await update.message.reply_text(f"✅ <b>Brain Target Updated:</b> {codex_agent._model}", parse_mode=ParseMode.HTML)
+        return
+
+    msg = await update.message.reply_text(f"{E['brain']} Thinking ({codex_agent._model})...")
     response = await codex_agent.think(question)
+    
+    if "404" in str(response) and "ollama" in codex_agent._model.lower():
+        response += f"\n\n💡 <b>Tip:</b> This model might not be downloaded. Run <code>py provider_setup.py</code> on your server and use the 'Pull' option."
+
     await msg.edit_text(
-        f"{E['brain']} <b>AI Response</b>\n\n{html.escape(response)}",
+        f"{E['brain']} <b>AI ({codex_agent._model})</b>\n\n{html.escape(response)}",
         parse_mode=ParseMode.HTML, reply_markup=_back_button()
     )
 
@@ -693,25 +740,21 @@ async def cmd_ai(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_auth(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(update):
         return
-    if oauth_manager.is_authenticated():
-        await update.message.reply_text(f"{E['check']} Already authenticated with OpenAI OAuth!", reply_markup=_back_button())
-        return
-    await update.message.reply_text(
-        f"{E['key']} <b>OpenAI OAuth Authentication</b>\n\n"
-        f"Starting browser authentication flow...\n"
-        f"A browser window will open on the server.\n"
-        f"After logging in, the bot will be connected.",
-        parse_mode=ParseMode.HTML
+    status = oauth.status()
+    active_p, _ = oauth.best_token()
+    
+    text = (
+        f"{E['key']} <b>Provider Authentication</b>\n\n"
+        f"Active Provider: <b>{active_p.upper() if active_p else 'None'}</b>\n\n"
+        f"<b>Status:</b>\n"
     )
-    try:
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, oauth.login, "openai")
-        if oauth.is_authenticated():
-            await update.message.reply_text(f"{E['check']} Authentication successful! AI features are now active.", reply_markup=_main_menu())
-        else:
-            await update.message.reply_text(f"{E['cross']} Authentication failed or was cancelled.", reply_markup=_back_button())
-    except Exception as e:
-        await update.message.reply_text(f"{E['cross']} Auth error: {e}")
+    for p, ok in status.items():
+        text += f"{'✅' if ok else '❌'} {p.upper()}\n"
+    
+    text += f"\n<i>To change providers or add keys, run:</i>\n<code>py provider_setup.py</code>\n<i>on your server.</i>"
+    
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_back_button())
+    return
 
 
 # ─────────────────────────────── CALLBACK QUERY HANDLER ─────────────────────
@@ -775,7 +818,7 @@ async def callback_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     elif data == "cmd_signals":
         await edit(f"{E['signal']} Generating signals...")
-        data2 = await _scan_market(DEFAULT_SYMBOLS)
+        data2 = await _scan(DEFAULT_SYMBOLS)
         results = data2.get("scan_results", [])
         buys = [r for r in results if r["signal"] == "BUY"]
         sells = [r for r in results if r["signal"] == "SELL"]
@@ -935,6 +978,7 @@ def build_bot() -> Application:
         ("analyze",   cmd_analyze),
         ("ai",        cmd_ai),
         ("auth",      cmd_auth),
+        ("models",    cmd_models),
     ]
     for name, handler in handlers:
         app.add_handler(CommandHandler(name, handler))

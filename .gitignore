@@ -20,3 +20,6 @@ Thumbs.db
 Binance-alpha-trader-/
 binance-skills-hub/
 push_new_repo.ps1
+session.json
+.tokens/
+.config/

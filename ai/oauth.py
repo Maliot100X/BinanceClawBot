@@ -33,7 +33,7 @@ PROVIDERS = {
         },
     },
     "gemini": {
-        "client_id": os.environ.get("GEMINI_OAUTH_CLIENT_ID", "local-client-id"),
+        "client_id": os.environ.get("GEMINI_OAUTH_CLIENT_ID", "google-sdk-client-id"),
         "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
         "token_url": "https://oauth2.googleapis.com/token",
         "scopes": "openid email profile",
@@ -90,6 +90,10 @@ class MultiOAuthManager:
         }
         params.update(cfg.get("extra_params", {}))
         
+        if provider == "gemini" and cfg["client_id"] == "google-sdk-client-id":
+             logger.warning("⚠️ Using placeholder Gemini Client ID. Browser login WILL FAIL unless you have configured a Google Cloud Project.")
+             logger.warning("👉 Recommendation: Use 'Direct API Key' (Option 2) in provider_setup.py instead.")
+
         auth_url = f"{cfg['auth_url']}?{urllib.parse.urlencode(params)}"
         logger.info(f"Opening browser for {provider} login...")
         webbrowser.open(auth_url)
@@ -107,7 +111,13 @@ class MultiOAuthManager:
                 "client_id": cfg["client_id"],
                 "code_verifier": verifier,
             }
-            r = httpx.post(cfg["token_url"], data=token_data)
+            # INCREASED TIMEOUT FOR NETWORK RESILIENCE
+            try:
+                r = httpx.post(cfg["token_url"], data=token_data, timeout=30.0)
+            except httpx.ConnectTimeout:
+                logger.error("OAuth Connection Timeout: OpenAI server took too long to respond. Retrying...")
+                r = httpx.post(cfg["token_url"], data=token_data, timeout=60.0)
+                
             if r.status_code == 200:
                 token = r.json()
                 token["expires_at"] = time.time() + token.get("expires_in", 3600)
@@ -115,10 +125,29 @@ class MultiOAuthManager:
                 
                 # SECTION 1: Capture and Bridge Session
                 if provider == "openai":
+                    access_token = token.get("access_token")
+                    
+                    # FETCH REAL MODELS INSTANTLY — WITH ROBUST TIMEOUT
+                    best_model = "gpt-5.3-codex" # Default fallback
+                    try:
+                        logger.info("Fetching available models from OpenAI...")
+                        mr = httpx.get("https://api.openai.com/v1/models", headers={"Authorization": f"Bearer {access_token}"}, timeout=20.0)
+                        if mr.status_code == 200:
+                            models = [m["id"] for m in mr.json().get("data", [])]
+                            # Priority list (2026 Standards)
+                            for m in ["gpt-5.3-codex", "gpt-5", "gpt-4.5-preview", "gpt-4o", "gpt-4-turbo"]:
+                                if m in models:
+                                    best_model = m
+                                    break
+                            logger.success(f"Dynamic Brain synchronization complete: Using {best_model}")
+                    except Exception as e:
+                        logger.warning(f"Could not fetch models: {e}. Using fallback {best_model}")
+
                     session = {
-                        "access_token": token.get("access_token"),
+                        "access_token": access_token,
                         "refresh_token": token.get("refresh_token"),
-                        "expires_at": token.get("expires_at")
+                        "expires_at": token.get("expires_at"),
+                        "model": best_model
                     }
                     # Save to absolute project root for synchronization
                     (BASE_DIR / "session.json").write_text(json.dumps(session, indent=2))
@@ -175,7 +204,18 @@ class MultiOAuthManager:
         return None
 
     def is_authenticated(self, provider: str = "openai") -> bool:
-        return self.get_token(provider) is not None
+        # Check standard OAuth token
+        if self.get_token(provider) is not None: return True
+        # Check CLI session bridge
+        if provider == "openai":
+            sess_path = BASE_DIR / "session.json"
+            if sess_path.exists():
+                try:
+                    sess = json.loads(sess_path.read_text())
+                    if sess.get("access_token") and sess.get("expires_at", 0) > time.time():
+                        return True
+                except: pass
+        return False
 
     def save_api_key(self, provider: str, api_key: str):
         # Save to local config or env
@@ -187,21 +227,69 @@ class MultiOAuthManager:
         self._save(data)
 
     def best_token(self) -> tuple[Optional[str], Optional[str]]:
-        # Check absolute session.json first
+        # ── 1. Check Explicitly Active Provider ─────────────────────────────
+        active = os.environ.get("ACTIVE_AI_PROVIDER", "").lower()
+        if active:
+            if active == "ollama":
+                return "ollama", "local"
+            
+            # If active is openai, prefer session then direct key
+            if active == "openai":
+                sess_path = BASE_DIR / "session.json"
+                if sess_path.exists():
+                    try:
+                        sess = json.loads(sess_path.read_text())
+                        if sess.get("access_token") and sess.get("expires_at", 0) > time.time():
+                            return "openai", sess["access_token"]
+                    except: pass
+                key = os.environ.get("OPENAI_API_KEY", "")
+                if key: return "openai", key
+
+            env_map = {
+                "groq": "GROQ_API_KEY",
+                "deepseek": "DEEPSEEK_API_KEY",
+                "openrouter": "OPENROUTER_API_KEY",
+                "gemini": "GEMINI_API_KEY",
+            }
+            mapped_key = env_map.get(active)
+            if mapped_key:
+                val = os.environ.get(mapped_key, "")
+                if val and val not in ("", "your_key_here"):
+                    logger.info(f"Using Active Provider: {active.upper()}")
+                    return active, val
+            logger.warning(f"Active provider '{active}' is set, but its API key is missing. Falling back to defaults.")
+
+        # ── 2. Direct API keys from env (instant, no OAuth needed) ──────────
+        # Priority order follows OpenClaw provider chain
+        ENV_PROVIDERS = [
+            ("openai",     "OPENAI_API_KEY"),
+            ("groq",       "GROQ_API_KEY"),
+            ("deepseek",   "DEEPSEEK_API_KEY"),
+            ("openrouter",  "OPENROUTER_API_KEY"),
+            ("gemini",     "GEMINI_API_KEY"),
+            ("ollama",     "OLLAMA_API_KEY"),
+        ]
+        for prov, env_var in ENV_PROVIDERS:
+            key = os.environ.get(env_var, "")
+            if key and key not in ("", "your_key_here"):
+                return prov, key
+
+        # ── 3. CLI-bridged session.json (OpenAI OAuth) ──────────────────────
         sess_path = BASE_DIR / "session.json"
         if sess_path.exists():
             try:
                 sess = json.loads(sess_path.read_text())
-                if sess.get("access_token"):
+                if sess.get("access_token") and sess.get("expires_at", 0) > time.time():
                     return "openai", sess["access_token"]
             except: pass
 
-        # Check OAuth first
+        # ── 3. OAuth tokens ─────────────────────────────────────────────────
         for provider in PROVIDERS:
             token = self.get_token(provider)
             if token:
                 return provider, token.get("access_token")
-        # Check Direct API keys as fallback
+
+        # ── 4. Saved API keys in config ─────────────────────────────────────
         data = self._load()
         keys = data.get("api_keys", {})
         for provider, key in keys.items():

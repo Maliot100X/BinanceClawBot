@@ -9,7 +9,7 @@
 [![Next.js 14](https://img.shields.io/badge/Next.js-14-00d4ff?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
 [![Binance](https://img.shields.io/badge/Binance-Skills%2026-F0B90B?style=for-the-badge&logo=binance&logoColor=black)](https://binance.com)
 
-*26 Binance Skills • Professional PKCE OAuth • 3D Dashboard Preview • 24/7 AI Brain*
+*26 Binance Skills • Multi-Provider AI (Ollama/Groq/Gemini) • 3D Dashboard • 24/7 AI Brain*
 
 </div>
 
@@ -17,23 +17,13 @@
 
 ## 🚀 Overview
 
-KaiNova BinanceClawBot is a production-grade autonomous trading platform that combines the power of **LLM reasoning** (OpenAI GPT-4o, Google Gemini) with the **Binance Skills Hub API (26 skills)**. It scans markets every 30 seconds, analyzes technical indicators (RSI, MACD, EMA, VWAP), and executes trades with professional risk management protocols.
-
-## ✨ Key Features
-
-- **26 Binance Skills**: Native support for Spot, Futures, Margin, Algo trading, Earn, and DeFi.
-- **AI Reasoning Engine**: Multi-provider support (OpenAI, Gemini, Antigravity) via secure PKCE OAuth.
-- **Advanced Technical Analysis**: Real-time compute of RSI, MACD, EMA, VWAP, Bollinger Bands, and ATR.
-- **Pro Risk Management**: 5% max position, 10% daily loss circuit breaker, and 5x max leverage.
-- **Telegram Control**: Full command-and-control via a premium Telegram interface.
-- **3D Dashboard**: Stunning Next.js 14 dashboard with real-time charting and public preview mode.
+KaiNova BinanceClawBot is a production-grade autonomous trading platform that combines the power of **LLM reasoning** (Ollama, Groq, Gemini, OpenAI) with a hardened **Binance Skills Hub (26 skills)**. It scans markets every 30 seconds, computes deep TA (RSI, MACD, EMA, VWAP), and executes trades with professional-grade risk circuits.
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## 🛠️ Installation & Setup
 
-### 1. Installation
-
+### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/Maliot100X/BinanceClawBot.git
 cd BinanceClawBot
@@ -41,80 +31,97 @@ pip install -r requirements.txt
 cd dashboard && npm install && cd ..
 ```
 
-### 2. Configuration
-
-Copy `.env.example` to `.env` and fill in your credentials:
-
+### 2. Configure AI Brain & Keys
+Launch the interactive setup tool to configure your API keys and select your active AI provider:
 ```bash
-cp .env.example .env
+py provider_setup.py
 ```
+*Supports Ollama (Local/Cloud), Groq (Llama 3.3), Google Gemini, and OpenAI.*
 
 ### 3. One-Click Launch
-The new `start_all.py` script automatically verifies your environment and launches everything:
+The unified launcher handles process hardening and synchronization across the full stack:
 ```bash
 py start_all.py
 ```
-*Accessible at: Dashboard (http://localhost:3000), API (http://localhost:8000), and your Telegram Bot.*
+- **Dashboard**: `http://localhost:3000`
+- **FastAPI Backend**: `http://localhost:8000`
+- **Telegram Bot**: Active immediately
 
 ---
 
-## 🔑 Professional OAuth & Security
-
-KaiNova implements high-security **Proof Key for Code Exchange (PKCE)**. No API keys for your AI Brain are stored in `.env`.
-
-- **CLI Auth**: `py codex.py login`
-- **Web Auth**: Connect directly from the dashboard navbar.
-- **Encryption**: All tokens are stored encrypted in your local `.config` directory.
-
----
-
-## 📋 Commands
+## 🤖 AI Commands (Telegram)
 
 | Command | Description |
 |---------|-------------|
-| `/startbot` | Enable auto-trading algorithm |
-| `/stopbot` | Pause auto-trading |
-| `/scan` | Full market scan with AI insights |
-| `/portfolio`| Real-time balance and risk summary |
-| `/status` | System, API, and Brain connectivity |
-| `/ai <q>` | Ask the KaiNova Codex Brain anything |
+| `/startbot` | Activate autonomous trading algorithm |
+| `/stopbot` | Safely pause the trading loop |
+| `/scan` | Force a full market scan with AI reasoning |
+| `/portfolio`| Real-time balance, positions, and PnL |
+| `/models` | List available models for the active brain |
+| `/ai model <name>` | Hot-swap your AI Brain model (e.g. `llama3.3`) |
+| `/ai <question>` | Direct interaction with the KaiNova Codex |
 
 ---
 
-## 📋 Pro CLI Commands (`codex.py`)
-| Command | Description |
-|---------|-------------|
-| `py codex.py login` | Connect OpenAI/Gemini/Antigravity |
-| `py codex.py status` | Check system & connectivity status |
-| `py codex.py start` | Activate the autonomous trading loop |
-| `py codex.py stop` | Safely pause the bot |
+## 📋 System Commands (CLI)
+
+### `py start_all.py`
+The master launcher that performs aggressive process hardening (clearing port 8000/3000), verifies AI authentication, and boots the Dashboard, Backend, and Bot concurrently.
+
+### `py provider_setup.py`
+The interactive management hub for:
+- Configuring multi-provider API keys.
+- Managing local models (`ollama pull deepseek-v3`).
+- Switching the active "AI Brain" for the entire ecosystem.
+- Testing connectivity heartbeats.
 
 ---
 
-## 📄 Project Structure
+## 📄 Project Architecture
 
-```
+```bash
 BinanceClawBot/
-├── ai/              # AI Brain & OAuth managers
-├── api_server.py    # FastAPI backend
-├── config/          # Centralized settings
-├── core/            # Database & shared logic
-├── dashboard/       # Next.js 14 Web UI
-├── execution/       # Order execution engine
-├── risk/            # Risk management & circuit breakers
-├── signals/         # TA & signal generation
-├── skills/          # 26 Binance Skills Hub modules
-├── telegram_bot/    # Premium Telegram UI
-└── start_all.py     # Unified process manager
+├── ai/              # Multi-provider Brain & OAuth logic
+├── api_server.py    # FastAPI High-Performance Backend
+├── dashboard/       # Next.js 14 Premium Web UI
+├── telegram_bot/    # Feature-rich Telegram Interface
+├── skills/          # The 26 Binance Skills Modules
+├── core/            # Database & Shared Logic
+├── signals/         # Technical Analysis Engine
+└── start_all.py     # Unified Sync Manager
 ```
+
+---
+
+## ⚔️ Maliot100X Laboratory
+**Founder of an autonomous AI lab building multi-agent systems, digital operators, and 24/7 execution infrastructure.**
+
+### 🧠 The Thesis
+The next generation of software won’t be static. It will be agentic, collaborative, persistent, and operational. KaiNova is the realization of 24/7 autonomous execution where AI stops being a chatbot and starts being an operator.
+
+- **Multi-Agent Systems**: Coordinated execution across specialized skills.
+- **24/7 Infrastructure**: Always-on monitoring and response.
+- **GitHub Native**: Built in public for the future of agentic finance.
+
+### 🛠️ Stack
+`Python` `Next.js` `FastAPI` `TypeScript` `Binance API` `Ollama` `Groq` `Gemini` `OpenRouter`
+
+### 📡 Live Signals
+- **Status**: Stable v1.2
+- **Ecosystem**: [openclaw.ai](https://github.com/Maliot100X/openclaw.ai) | [ZooBot](https://github.com/Maliot100X/ZooBot)
+- **Identity**: Branded autonomous concepts (Kai & Nova)
+
+### 🔗 Connect
+- **GitHub**: [Maliot100X](https://github.com/Maliot100X)
+- **X (Twitter)**: [@KaiNovasWarm](https://x.com/KaiNovasWarm)
+- **Ecosystem**: [OpenClaw](https://github.com/Maliot100X/openclaw.ai)
+
+---
+
+## 🦞 Final Word
+I’m not here to make AI look cute. I’m here to make it useful, operational, scalable, and impossible to ignore. This repository is where the future of autonomous trading is built in public.
 
 ---
 
 ## ⚠️ Disclaimer
-**Trading cryptocurrencies involves substantial risk of loss. This software is provided "as is". Past performance is not indicative of future results. Use with extreme caution.**
-
----
-
-<div align="center">
-Built with ❤️ for the future of agentic finance by **Maliot / KaiNova**.
-</div>
+**Trading cryptocurrencies involves substantial risk of loss. This software is provided "as is". Use with extreme caution and always monitor your risk circuits.**
