@@ -29,6 +29,7 @@ const SKILL_INFO: Record<string,{desc:string,icon:string,color:string,endpoints:
   query_token_audit:           { icon:'🛡️', color:'#fb7185', desc:'Smart contract security audit', endpoints:['audit'] },
   query_token_info:            { icon:'📊', color:'#c084fc', desc:'DexScreener token pairs & price', endpoints:['tokenInfo','tokenPrice','pairsByToken'] },
   trading_signal:              { icon:'📡', color:'#67e8f9', desc:'Binance AI trading signals', endpoints:['signals','signalBySymbol'] },
+  mobula:                      { icon:'📊', color:'#00ff88', desc:'Real-time market analytics via Mobula API', endpoints:['marketData','price'] },
 }
 
 export default function SkillsPage() {
@@ -39,10 +40,10 @@ export default function SkillsPage() {
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px' }}>
         <div>
           <h1 style={{ color:'white', fontSize:'1.6rem', fontWeight:800 }}>🔧 Binance Skills Hub</h1>
-          <p style={{ color:'#475569', fontSize:'0.85rem', marginTop:'4px' }}>All 26 skills loaded from github.com/binance/binance-skills-hub</p>
+          <p style={{ color:'#475569', fontSize:'0.85rem', marginTop:'4px' }}>All {skills.length} skills loaded from github.com/binance/binance-skills-hub</p>
         </div>
         <div style={{ padding:'8px 16px', borderRadius:'10px', background:'rgba(0,255,136,0.1)', border:'1px solid rgba(0,255,136,0.2)', color:'#00ff88', fontWeight:700 }}>
-          26 / 26 Active ✓
+          {skills.length} / 26 Active ✓
         </div>
       </div>
 

@@ -592,6 +592,26 @@ async def cmd_signals(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=_back_button())
 
 
+async def cmd_mobula(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(update):
+        return
+    args = ctx.args
+    asset = args[0] if args else "BTC"
+    from skills.loader import SKILLS
+    try:
+        res = await SKILLS["mobula"].market_data(asset)
+        price = res.get("price", 0)
+        cap = res.get("market_cap", 0)
+        await update.message.reply_text(
+            f"📊 <b>Mobula Analytics: {asset}</b>\n\n"
+            f"Price: <b>${price:,.2f}</b>\n"
+            f"Market Cap: <b>${cap:,.0f}</b>",
+            parse_mode=ParseMode.HTML, reply_markup=_back_button()
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Mobula Error: {e}")
+
+
 async def cmd_earn(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(update):
         return
@@ -973,6 +993,7 @@ def build_bot() -> Application:
         ("signals",   cmd_signals),
         ("earn",      cmd_earn),
         ("convert",   cmd_convert),
+        ("mobula",    cmd_mobula),
         ("history",   cmd_history),
         ("risk",      cmd_risk),
         ("analyze",   cmd_analyze),
