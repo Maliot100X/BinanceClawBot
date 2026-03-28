@@ -274,35 +274,26 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"/startbot — Enable auto-trading loop\n"
         f"/stopbot — Pause auto-trading\n"
         f"/status — System & connection status\n\n"
-        f"<b>Market</b>\n"
+        f"<b>Market Analytics</b>\n"
         f"/scan — Full market scan with signals\n"
-        f"/scan BTC ETH SOL — Scan specific coins\n"
-        f"/signals — Latest trading signals\n"
-        f"/ticker BTCUSDT — Live ticker for symbol\n\n"
-        f"<b>Portfolio</b>\n"
+        f"/dex SOL — Search pairs on Dexscreener\n"
+        f"/mobula BTC — Market analytics (Price/Cap)\n"
+        f"/ticker BTCUSDT — Live ticker for symbol\n"
+        f"/signals — Latest trading signals\n\n"
+        f"<b>Portfolio & Trading</b>\n"
         f"/portfolio — Balances and risk summary\n"
         f"/positions — Open positions\n"
         f"/profit — Daily PnL report\n"
-        f"/history — Recent trade history\n\n"
-        f"<b>Trading</b>\n"
         f"/buy BTCUSDT 0.001 — Market buy\n"
         f"/sell BTCUSDT 0.001 — Market sell\n"
-        f"/limit BUY BTCUSDT 0.001 60000 — Limit order\n"
         f"/close BTCUSDT — Close open position\n"
         f"/closeall — Close all positions\n\n"
-        f"<b>Futures</b>\n"
-        f"/futures buy BTCUSDT 0.001 — Futures market buy\n"
-        f"/leverage BTCUSDT 3 — Set leverage\n"
-        f"/funding BTCUSDT — Funding rate\n\n"
-        f"<b>Earn & Convert</b>\n"
-        f"/earn — Simple earn products\n"
-        f"/convert BTC USDT 0.01 — Get convert quote\n\n"
-        f"<b>AI</b>\n"
-        f"/ai <question> — Ask the AI\n"
-        f"/analyze BTCUSDT — AI deep analysis\n"
-        f"/models — List & switch AI models\n"
-        f"/auth — Provider Authentication status\n\n"
-        f"<b>Info</b>\n"
+        f"<b>AI Brain</b>\n"
+        f"/ai <q> — Ask the KaiNova Brain\n"
+        f"/analyze BTCUSDT — Deep AI analysis\n"
+        f"/models — Switch AI model\n"
+        f"/auth — Authentication status\n\n"
+        f"<b>Meta</b>\n"
         f"/risk — Risk management status\n"
         f"/menu — Show interactive menu\n"
         f"/help — This help message"
@@ -596,10 +587,16 @@ async def cmd_mobula(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(update):
         return
     args = ctx.args
-    asset = args[0] if args else "BTC"
+    if not args:
+        await update.message.reply_text(f"💡 Usage: /mobula BTC (or coin name)\n\nThis fetches real-time price and market cap from the Mobula Analytics engine.")
+        return
+    asset = " ".join(args)
     from skills.loader import SKILLS
     try:
         res = await SKILLS["mobula"].market_data(asset)
+        if not res or "price" not in res:
+             await update.message.reply_text(f"❌ Asset '{asset}' not found on Mobula. Try a full name or different symbol.")
+             return
         price = res.get("price", 0)
         cap = res.get("market_cap", 0)
         await update.message.reply_text(
@@ -609,7 +606,37 @@ async def cmd_mobula(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.HTML, reply_markup=_back_button()
         )
     except Exception as e:
-        await update.message.reply_text(f"❌ Mobula Error: {e}")
+        await update.message.reply_text(f"❌ Mobula API Error: {e}\n\nCheck your API key in .env if this persists.")
+
+
+async def cmd_dex(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(update):
+        return
+    args = ctx.args
+    if not args:
+        await update.message.reply_text(f"💡 Usage: /dex <symbol_or_address>\n\nFetches real-time pairs and liquidity from Dexscreener.")
+        return
+    query = " ".join(args)
+    from skills.loader import SKILLS
+    try:
+        res = await SKILLS["dexscreener"].search_pairs(query)
+        pairs = res.get("pairs", [])
+        if not pairs:
+            await update.message.reply_text(f"🔍 No pairs found for '{query}' on Dexscreener.")
+            return
+        
+        # Format top 3 pairs
+        lines = [f"🦅 <b>Dexscreener: {query}</b>\n"]
+        for p in pairs[:3]:
+            lines.append(
+                f"🔹 <b>{p.get('baseToken',{}).get('symbol')}/{p.get('quoteToken',{}).get('symbol')}</b> ({p.get('chainId')})\n"
+                f"   Price: <b>${p.get('priceUsd', '0')}</b>\n"
+                f"   Liq: ${float(p.get('liquidity',{}).get('usd',0)):,.0f}\n"
+                f"   Vol 24h: ${float(p.get('volume',{}).get('h24',0)):,.0f}\n"
+            )
+        await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=_back_button())
+    except Exception as e:
+        await update.message.reply_text(f"❌ Dexscreener Error: {e}")
 
 
 async def cmd_earn(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -994,6 +1021,7 @@ def build_bot() -> Application:
         ("earn",      cmd_earn),
         ("convert",   cmd_convert),
         ("mobula",    cmd_mobula),
+        ("dex",       cmd_dex),
         ("history",   cmd_history),
         ("risk",      cmd_risk),
         ("analyze",   cmd_analyze),

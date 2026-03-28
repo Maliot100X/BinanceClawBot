@@ -55,11 +55,12 @@ py start_all.py
 |---------|-------------|
 | `/startbot` | Activate autonomous trading algorithm |
 | `/stopbot` | Safely pause the trading loop |
-| `/scan` | Force a full market scan with AI reasoning |
+| `/scan` | Full market scan with AI reasoning |
+| `/dex <sym>`| **[NEW]** Real-time search on Dexscreener |
+| `/mobula <sym>`| **[NEW]** Market analytics (Price/Cap) |
 | `/portfolio`| Real-time balance, positions, and PnL |
 | `/models` | List available models for the active brain |
-| `/ai model <name>` | Hot-swap your AI Brain model (e.g. `llama3.3`) |
-| `/ai <question>` | Direct interaction with the KaiNova Codex |
+| `/ai <q>` | Direct interaction with the KaiNova Brain |
 
 ---
 
@@ -106,20 +107,10 @@ The next generation of software won’t be static. It will be agentic, collabora
 ### 🛠️ Stack
 `Python` `Next.js` `FastAPI` `TypeScript` `Binance API` `Ollama` `Groq` `Gemini` `OpenRouter`
 
-### 📡 Live Signals
-- **Status**: Stable v1.2
-- **Ecosystem**: [openclaw.ai](https://github.com/Maliot100X/openclaw.ai) | [ZooBot](https://github.com/Maliot100X/ZooBot)
-- **Identity**: Branded autonomous concepts (Kai & Nova)
-
-### 🔗 Connect
-- **GitHub**: [Maliot100X](https://github.com/Maliot100X)
-- **X (Twitter)**: [@KaiNovasWarm](https://x.com/KaiNovasWarm)
-- **Ecosystem**: [OpenClaw](https://github.com/Maliot100X/openclaw.ai)
-
 ---
 
-## 🦞 Final Word
-I’m not here to make AI look cute. I’m here to make it useful, operational, scalable, and impossible to ignore. This repository is where the future of autonomous trading is built in public.
+## Lobster Society & Maliot100X
+Built by @Maliot100X for the Lobster Society. No compromise, pure execution.
 
 ---
 

@@ -569,17 +569,26 @@ class QueryTokenAuditSkill(SkillBase):
         except Exception: return {"contract": contract_address, "status": "unavailable"}
 
 
-class QueryTokenInfoSkill(SkillBase):
-    skill_name = "query-token-info"
+class DexscreenerSkill(SkillBase):
+    skill_name = "dexscreener"
     _DS = "https://api.dexscreener.com/latest/dex"
-    async def token_info(self, contract_address):
+    
+    async def token_info(self, contract_address: str):
         return await self._get(f"{self._DS}/tokens/{contract_address}")
-    async def token_price(self, contract_address) -> float:
+    
+    async def search_pairs(self, query: str):
+        return await self._get(f"{self._DS}/search", {"q": query})
+    
+    async def get_pairs_by_chain(self, chain_id: str, pair_id: str):
+        return await self._get(f"{self._DS}/pairs/{chain_id}/{pair_id}")
+    
+    async def token_price(self, contract_address: str) -> float:
         d = await self.token_info(contract_address)
         pairs = d.get("pairs") or []
+        for p in pairs:
+            if p.get("quoteToken", {}).get("symbol") == "USDT" or p.get("quoteToken", {}).get("symbol") == "USDC":
+                return float(p.get("priceUsd", 0))
         return float(pairs[0]["priceUsd"]) if pairs else 0.0
-    async def pairs_by_token(self, token_address):
-        return await self._get(f"{self._DS}/tokens/{token_address}")
 
 
 class TradingSignalSkill(SkillBase):
@@ -620,7 +629,7 @@ def load_all_skills() -> dict[str, SkillBase]:
         "meme_rush":                     MemeRushSkill(),
         "query_address_info":            QueryAddressInfoSkill(),
         "query_token_audit":             QueryTokenAuditSkill(),
-        "query_token_info":              QueryTokenInfoSkill(),
+        "dexscreener":                   DexscreenerSkill(),
         "trading_signal":                TradingSignalSkill(),
         "mobula":                        MobulaSkill(),
     }

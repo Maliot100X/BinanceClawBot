@@ -173,11 +173,17 @@ def main():
             active_prov = str(p).upper()
         except: pass
 
+    num_skills = 0
+    try:
+        from skills.loader import SKILLS
+        num_skills = len(SKILLS)
+    except: num_skills = 26
+
     print("\n" + "="*60)
     print("✨ ALL SYSTEMS LIVE & SYNCHRONIZED ✨")
     print("👉 Dashboard: http://localhost:3000")
     print(f"👉 AI Engine: {active_prov}")
-    print("👉 Skills: 26 Active")
+    print(f"👉 Skills: {num_skills} Active")
     print("👉 Logs: check ./logs/ directory")
     print("="*60 + "\n")
     

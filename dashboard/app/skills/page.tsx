@@ -27,7 +27,7 @@ const SKILL_INFO: Record<string,{desc:string,icon:string,color:string,endpoints:
   meme_rush:                   { icon:'🐸', color:'#a3e635', desc:'Binance Meme Rush token list', endpoints:['tokens','leaderboard'] },
   query_address_info:          { icon:'🔍', color:'#38bdf8', desc:'On-chain address info & history', endpoints:['query'] },
   query_token_audit:           { icon:'🛡️', color:'#fb7185', desc:'Smart contract security audit', endpoints:['audit'] },
-  query_token_info:            { icon:'📊', color:'#c084fc', desc:'DexScreener token pairs & price', endpoints:['tokenInfo','tokenPrice','pairsByToken'] },
+  dexscreener:                  { icon:'📊', color:'#c084fc', desc:'DexScreener real-time pairs & liquidity search', endpoints:['tokenInfo','searchPairs','getPairsByChain','tokenPrice'] },
   trading_signal:              { icon:'📡', color:'#67e8f9', desc:'Binance AI trading signals', endpoints:['signals','signalBySymbol'] },
   mobula:                      { icon:'📊', color:'#00ff88', desc:'Real-time market analytics via Mobula API', endpoints:['marketData','price'] },
 }
