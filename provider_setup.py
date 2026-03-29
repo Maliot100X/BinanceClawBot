@@ -50,7 +50,14 @@ PROVIDERS = {
         "env_var": "OLLAMA_URL",
         "default": "http://localhost:11434",
     },
+    "7": {
+        "id": "antigravity",
+        "name": "Google Antigravity (OAuth)",
+        "env_var": "ANTIGRAVITY_TOKEN",
+        "oauth_only": True,
+    },
 }
+
 
 def banner():
     print("\n" + "="*60)
@@ -151,6 +158,42 @@ def test_provider():
             headers["Authorization"] = f"Bearer {token}"
             
         payload = {"model": test_model, "messages": [{"role": "user", "content": "Say hello"}], "max_tokens": 10}
+    elif provider == "antigravity":
+        # Antigravity uses Cloud Code Assist API via OAuth token
+        url = "https://daily-cloudcode-pa.sandbox.googleapis.com/v1internal/codeAssist:generateCode"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "User-Agent": "antigravity/1.18.3 windows/amd64",
+            "X-Goog-Api-Client": "google-cloud-sdk vscode_cloudshelleditor/0.1",
+        }
+        payload = {
+            "model": "models/gemini-2.5-flash",
+            "contents": [{"parts": [{"text": "Reply with only: hello"}]}],
+            "generationConfig": {"maxOutputTokens": 10}
+        }
+        # Try direct Gemini API as fallback test
+        try:
+            r = httpx.post(url, headers=headers, json=payload, timeout=20.0)
+            if r.status_code == 200:
+                print(f"  \u2705 WORKING! Antigravity Cloud Code connected.")
+                return True
+            else:
+                # Fallback: try generativelanguage endpoint
+                url2 = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+                headers2 = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+                payload2 = {"contents": [{"parts": [{"text": "Say hello in one word"}]}]}
+                r2 = httpx.post(url2, headers=headers2, json=payload2, timeout=20.0)
+                if r2.status_code == 200:
+                    text = r2.json()["candidates"][0]["content"]["parts"][0]["text"]
+                    print(f"  \u2705 WORKING via Gemini API! AI says: {text.strip()}")
+                    return True
+                else:
+                    print(f"  \u274c Error {r.status_code}: {r.text[:200]}")
+                    return False
+        except Exception as e:
+            print(f"  \u274c Antigravity connection failed: {e}")
+            return False
     else:
         url = "https://openrouter.ai/api/v1/chat/completions"
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "HTTP-Referer": "https://github.com/Maliot100X/BinanceClawBot"}
@@ -224,6 +267,29 @@ def setup_provider():
             pass
         else:
             return
+
+    if prov["id"] == "antigravity":
+        print("\n\ud83e\uddec Google Antigravity Setup (OAuth)")
+        print("  This will open Google login in your browser.")
+        print("  You'll get access to: Gemini 3 Pro, Claude Opus 4.6, etc.")
+        print("")
+        print("  \u26a0\ufe0f  WARNING: Using Antigravity OAuth may violate Google ToS.")
+        print("  Your Google account could be banned. Proceed at your own risk.")
+        print("")
+        proceed = input("  Continue? (Y/n): ").strip().upper()
+        if proceed == "N":
+            print("  Skipped.")
+            return
+        
+        sys.path.insert(0, str(BASE_DIR))
+        from ai.oauth import oauth
+        oauth.login("antigravity")
+        set_active("antigravity")
+        return
+
+    if prov.get("oauth_only"):
+        print(f"\n\u26a0\ufe0f {prov['name']} requires Browser OAuth login.")
+        return
 
     if prov["id"] == "gemini":
         print("\n🔑 Google Gemini Setup")
@@ -329,7 +395,7 @@ def reset_all_models():
     keys_to_clear = [
         "ACTIVE_AI_PROVIDER", "OPENAI_API_KEY", "GROQ_API_KEY", 
         "DEEPSEEK_API_KEY", "OPENROUTER_API_KEY", "GEMINI_API_KEY",
-        "OLLAMA_URL", "OLLAMA_API_KEY"
+        "OLLAMA_URL", "OLLAMA_API_KEY", "ANTIGRAVITY_TOKEN"
     ]
     
     for k in keys_to_clear:

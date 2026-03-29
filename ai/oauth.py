@@ -19,6 +19,13 @@ CONFIG_FILE = TOKEN_DIR / "config.json"
 def _token_path(provider: str) -> Path:
     return TOKEN_DIR / f"{provider}_token.json"
 
+# ── Antigravity API Endpoints ──────────────────────────────────────────────────
+ANTIGRAVITY_ENDPOINT_DAILY = "https://daily-cloudcode-pa.sandbox.googleapis.com"
+ANTIGRAVITY_ENDPOINT_AUTOPUSH = "https://autopush-cloudcode-pa.sandbox.googleapis.com"
+ANTIGRAVITY_ENDPOINT_PROD = "https://cloudcode-pa.googleapis.com"
+ANTIGRAVITY_ENDPOINTS = [ANTIGRAVITY_ENDPOINT_DAILY, ANTIGRAVITY_ENDPOINT_AUTOPUSH, ANTIGRAVITY_ENDPOINT_PROD]
+ANTIGRAVITY_DEFAULT_PROJECT = "rising-fact-p41fc"
+
 PROVIDERS = {
     "openai": {
         "client_id": os.environ.get("OPENAI_CLIENT_ID", "app_EMoamEEZ73f0CkXaXp7hrann"),
@@ -39,6 +46,19 @@ PROVIDERS = {
         "scopes": "openid email profile",
         "redirect_port": 8085,
         "redirect_path": "/oauth2callback",
+    },
+    "antigravity": {
+        "client_id": os.environ.get("ANTIGRAVITY_CLIENT_ID", ""),
+        "client_secret": os.environ.get("ANTIGRAVITY_CLIENT_SECRET", ""),
+        "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "scopes": "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/cclog https://www.googleapis.com/auth/experimentsandconfigs",
+        "redirect_port": 51121,
+        "redirect_path": "/oauth-callback",
+        "extra_params": {
+            "access_type": "offline",
+            "prompt": "consent",
+        },
     },
 }
 
@@ -111,11 +131,14 @@ class MultiOAuthManager:
                 "client_id": cfg["client_id"],
                 "code_verifier": verifier,
             }
+            # Add client_secret for providers that require it (e.g., Antigravity)
+            if cfg.get("client_secret"):
+                token_data["client_secret"] = cfg["client_secret"]
             # INCREASED TIMEOUT FOR NETWORK RESILIENCE
             try:
                 r = httpx.post(cfg["token_url"], data=token_data, timeout=30.0)
             except httpx.ConnectTimeout:
-                logger.error("OAuth Connection Timeout: OpenAI server took too long to respond. Retrying...")
+                logger.error("OAuth Connection Timeout: server took too long to respond. Retrying...")
                 r = httpx.post(cfg["token_url"], data=token_data, timeout=60.0)
                 
             if r.status_code == 200:
@@ -152,6 +175,48 @@ class MultiOAuthManager:
                     # Save to absolute project root for synchronization
                     (BASE_DIR / "session.json").write_text(json.dumps(session, indent=2))
                     self.send_session(session)
+
+                # SECTION: Antigravity — Discover project and available models
+                if provider == "antigravity":
+                    access_token = token.get("access_token")
+                    logger.info("🧬 Discovering Antigravity project and models...")
+                    project_id = ANTIGRAVITY_DEFAULT_PROJECT
+                    
+                    # Try to discover managed project via loadCodeAssist
+                    headers = {
+                        "Authorization": f"Bearer {access_token}",
+                        "User-Agent": "antigravity/1.18.3 windows/amd64",
+                        "X-Goog-Api-Client": "google-cloud-sdk vscode_cloudshelleditor/0.1",
+                        "Content-Type": "application/json",
+                    }
+                    for endpoint in [ANTIGRAVITY_ENDPOINT_PROD, ANTIGRAVITY_ENDPOINT_DAILY]:
+                        try:
+                            r_project = httpx.post(
+                                f"{endpoint}/v1/codeAssist:loadCodeAssist",
+                                headers=headers,
+                                json={},
+                                timeout=10.0
+                            )
+                            if r_project.status_code == 200:
+                                data = r_project.json()
+                                discovered = data.get("projectId") or data.get("project", {}).get("projectId")
+                                if discovered:
+                                    project_id = discovered
+                                    logger.success(f"✅ Antigravity Project: {project_id}")
+                                break
+                        except Exception as e:
+                            logger.debug(f"Project discovery on {endpoint}: {e}")
+                    
+                    # Save Antigravity session
+                    ag_session = {
+                        "access_token": access_token,
+                        "refresh_token": token.get("refresh_token"),
+                        "expires_at": token.get("expires_at"),
+                        "project_id": project_id,
+                        "provider": "antigravity",
+                    }
+                    _token_path("antigravity").write_text(json.dumps(ag_session, indent=2))
+                    logger.success(f"✅ Antigravity OAuth connected! Project: {project_id}")
 
                 logger.success(f"Successfully connected {provider}!")
                 return token
@@ -193,11 +258,17 @@ class MultiOAuthManager:
         if not token.get("refresh_token"): return None
         
         data = { "grant_type": "refresh_token", "refresh_token": token["refresh_token"], "client_id": cfg["client_id"] }
+        # Add client_secret for providers that require it (e.g., Antigravity)
+        if cfg.get("client_secret"):
+            data["client_secret"] = cfg["client_secret"]
         try:
             r = httpx.post(cfg["token_url"], data=data)
             if r.status_code == 200:
                 new_token = r.json()
                 new_token["expires_at"] = time.time() + new_token.get("expires_in", 3600)
+                # Preserve refresh_token if new one is not issued
+                if not new_token.get("refresh_token"):
+                    new_token["refresh_token"] = token.get("refresh_token")
                 path.write_text(json.dumps(new_token, indent=2))
                 return new_token
         except: pass
@@ -244,6 +315,14 @@ class MultiOAuthManager:
                     except: pass
                 key = os.environ.get("OPENAI_API_KEY", "")
                 if key: return "openai", key
+
+            # Check Antigravity OAuth tokens
+            if active == "antigravity":
+                ag_token = self.get_token("antigravity")
+                if ag_token:
+                    logger.info("Using Active Provider: ANTIGRAVITY (Google DeepMind)")
+                    return "antigravity", ag_token.get("access_token")
+                logger.warning("Antigravity is set as active but no OAuth token found. Run 'py provider_setup.py' to login.")
 
             env_map = {
                 "groq": "GROQ_API_KEY",

@@ -179,6 +179,14 @@ class CodexAgent:
                 elif provider == "gemini":
                     # Google doesn't have a clean 'list' endpoint for models via simple API key easily
                     return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-2.0-pro-exp-02-05"]
+                elif provider == "antigravity":
+                    return [
+                        "antigravity-gemini-3-pro", "antigravity-gemini-3.1-pro",
+                        "antigravity-gemini-3-flash", "antigravity-claude-sonnet-4-6",
+                        "antigravity-claude-opus-4-6-thinking",
+                        "gemini-2.5-flash", "gemini-2.5-pro",
+                        "gemini-3-flash-preview", "gemini-3-pro-preview",
+                    ]
                 elif provider == "ollama":
                     url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
                     r = await c.get(f"{url}/api/tags")
@@ -253,7 +261,8 @@ class CodexAgent:
             "deepseek": "deepseek-chat",
             "gemini": "gemini-2.0-flash",
             "openrouter": "anthropic/claude-3.5-sonnet",
-            "ollama": "llama3.3"
+            "ollama": "llama3.3",
+            "antigravity": "gemini-2.5-flash",
         }
         
         # Override for specific cloud model naming if needed
@@ -315,6 +324,40 @@ class CodexAgent:
                 
                 payload = {"model": model_for_request, "messages": messages}
                 openai_compat = "REST"
+            elif provider == "antigravity":
+                # Route through Google's generativelanguage API with OAuth Bearer token
+                ag_model = model_for_request
+                if "codex" in ag_model.lower() or "gpt" in ag_model.lower():
+                    ag_model = CODEX_MAPPING.get("antigravity", "gemini-2.5-flash")
+                
+                ag_endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{ag_model}:generateContent"
+                ag_headers = {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                }
+                # Convert OpenAI messages format to Gemini format
+                gemini_contents = []
+                for m in messages:
+                    role = "user" if m["role"] in ("user", "system") else "model"
+                    gemini_contents.append({"role": role, "parts": [{"text": m["content"]}]})
+                ag_payload = {
+                    "contents": gemini_contents,
+                    "generationConfig": {"maxOutputTokens": 4096}
+                }
+                try:
+                    async with httpx.AsyncClient(timeout=60.0) as c:
+                        r = await c.post(ag_endpoint, headers=ag_headers, json=ag_payload)
+                        if r.status_code == 200:
+                            resp = r.json()
+                            text = resp["candidates"][0]["content"]["parts"][0]["text"]
+                            self._history.append({"role": "assistant", "content": text})
+                            return text
+                        else:
+                            logger.error(f"Antigravity API error: {r.status_code} {r.text[:200]}")
+                            return f"⚠️ Antigravity API error: {r.status_code}"
+                except Exception as e:
+                    logger.error(f"Antigravity request failed: {e}")
+                    return f"⚠️ Antigravity error: {str(e)}"
             else:
                 return f"⚠️ Unknown provider: {provider}"
         except Exception as e:
