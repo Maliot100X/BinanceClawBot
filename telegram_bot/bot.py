@@ -246,72 +246,6 @@ async def _fmt_status() -> str:
 
 # ─────────────────────────────── COMMAND HANDLERS ───────────────────────────
 
-async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not _is_authorized(update):
-        return
-    text = (
-        f"{BANNER}\n\n"
-        f"🦾 <b>Welcome to KaiNova — Professional Autonomous Trading</b>\n\n"
-        f"You are now connected to the most advanced AI trading platform on Binance.\n\n"
-        f"<b>Integrated Stack:</b>\n"
-        f"• 🧠 <b>Dynamic Brain:</b> Multi-Provider Autonomous Intelligence\n"
-        f"• 📡 <b>26 Skills Hub:</b> Native Binance Spot/Futures/Margin/Algo\n"
-        f"• 🛡️ <b>Risk Guard:</b> Automated SL/TP, 10% Daily circuit breaker\n"
-        f"• 📊 <b>3D Dashboard:</b> Live monitoring at your fingertip\n\n"
-        f"🌐 <b>Dashboard:</b> http://localhost:3000\n\n"
-        f"<i>Use the menu below or type /help for a full command reference.</i>"
-    )
-    await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_main_menu())
-
-
-async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not _is_authorized(update):
-        return
-    text = (
-        f"{BANNER}\n\n"
-        f"📖 <b>KaiNova Master Command Reference</b>\n\n"
-        f"<b>⚙️ Bot Control & Meta</b>\n"
-        f"/start — Initialize bot & status menu\n"
-        f"/menu — Universal control dashboard\n"
-        f"/status — Engine & Connection health\n"
-        f"/auth — OAuth & Key status\n"
-        f"/help — This comprehensive guide\n\n"
-        f"<b>🤖 Autonomous Trading</b>\n"
-        f"/startbot — <b>ENABLE</b> Auto-Trading (Full AI AI)\n"
-        f"/stopbot — <b>PAUSE</b> All automated execution\n"
-        f"/set risk 1-5 — Change AI risk profile\n"
-        f"/risk — View current risk parameters\n\n"
-        f"<b>🦅 Market Analytics & Skills</b>\n"
-        f"/scan — Full market scan with indicators\n"
-        f"/scan BTC ETH — Scan specific symbols\n"
-        f"/skills — Overview of all 26 Binance skills\n"
-        f"/dex SOL — Real-time DexScreener search\n"
-        f"/mobula BTC — Mobula price & market cap\n"
-        f"/ticker BTCUSDT — Live price for any pair\n"
-        f"/signals — Latest Binance Web3 signals\n\n"
-        f"<b>💼 Portfolio & Logs</b>\n"
-        f"/portfolio — Balances & risk metrics\n"
-        f"/positions — View all open positions\n"
-        f"/profit — Detailed Daily PnL summary\n"
-        f"/history BTCUSDT — Recent trade history\n\n"
-        f"<b>🔥 Spot Trading Ops</b>\n"
-        f"/buy SYS QTY — Market buy\n"
-        f"/sell SYS QTY — Market sell\n"
-        f"/limit SIDE SYS QTY PX — Limit order\n"
-        f"/close SYS — Close specific position\n"
-        f"/closeall — Emergency close ALL positions\n\n"
-        f"<b>📉 Derivatives & Advanced</b>\n"
-        f"/futures buy BTC 0.1 — Market buy Futures\n"
-        f"/leverage BTC 5 — Set futures leverage\n"
-        f"/funding BTC — Check funding rates\n"
-        f"/earn — Simple Earn flexible products\n"
-        f"/convert BTC USDT 0.1 — Get convert quote\n\n"
-        f"<b>🧠 AI Brain Tools</b>\n"
-        f"/ai <text> — Chat with the KaiNova Brain\n"
-        f"/analyze BTC — Deep AI market analysis\n"
-        f"/models — Switch AI model providers"
-    )
-    await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_back_button())
 
 
 async def cmd_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -1032,6 +966,71 @@ async def callback_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 # ─────────────────────────────── FREE TEXT → AI ─────────────────────────────
 
+async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(update):
+        await update.message.reply_text("🛑 <b>Unauthorized</b>\n\nYour ID is not recognized. Contact the operator.")
+        return
+    await cmd_menu(update, ctx)
+
+
+async def cmd_id(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Always authorized — helps user find their ID."""
+    uid = update.effective_user.id
+    logger.info(f"ID CHECK hit by user {uid}")
+    await update.message.reply_text(f"💳 <b>Your Telegram ID:</b> <code>{uid}</code>", parse_mode=ParseMode.HTML)
+
+
+async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(update):
+        return
+    text = (
+        f"{BANNER}\n\n"
+        f"📖 <b>KaiNova Master Command Reference</b>\n\n"
+        f"<b>⚙️ Bot Control & Meta</b>\n"
+        f"/start — Initialize bot & status menu\n"
+        f"/menu — Universal control dashboard\n"
+        f"/status — Engine & Connection health\n"
+        f"/auth — OAuth & Key status\n"
+        f"/help — This comprehensive guide\n\n"
+        f"<b>🤖 Autonomous Trading</b>\n"
+        f"/startbot — <b>ENABLE</b> Auto-Trading (Full AI AI)\n"
+        f"/stopbot — <b>PAUSE</b> All automated execution\n"
+        f"/set risk 1-5 — Change AI risk profile\n"
+        f"/risk — View current risk parameters\n\n"
+        f"<b>🦅 Market Analytics & Skills</b>\n"
+        f"/scan — Full market scan with indicators\n"
+        f"/scan BTC ETH — Scan specific symbols\n"
+        f"/skills — Overview of all 26 Binance skills\n"
+        f"/dex SOL — Real-time DexScreener search\n"
+        f"/mobula BTC — Mobula price & market cap\n"
+        f"/ticker BTCUSDT — Live price for any pair\n"
+        f"/signals — Latest Binance Web3 signals\n\n"
+        f"<b>💼 Portfolio & Logs</b>\n"
+        f"/portfolio — Balances & risk metrics\n"
+        f"/positions — View all open positions\n"
+        f"/profit — Detailed Daily PnL summary\n"
+        f"/history BTCUSDT — Recent trade history\n\n"
+        f"<b>🔥 Spot Trading Ops</b>\n"
+        f"/buy SYS QTY — Market buy\n"
+        f"/sell SYS QTY — Market sell\n"
+        f"/limit SIDE SYS QTY PX — Limit order\n"
+        f"/close SYS — Close specific position\n"
+        f"/closeall — Emergency close ALL positions\n\n"
+        f"<b>📉 Derivatives & Advanced</b>\n"
+        f"/futures buy BTC 0.1 — Market buy Futures\n"
+        f"/leverage BTC 5 — Set futures leverage\n"
+        f"/funding BTC — Check funding rates\n"
+        f"/earn — Simple Earn flexible products\n"
+        f"/convert BTC USDT 0.1 — Get convert quote\n\n"
+        f"<b>🧠 AI Brain Tools</b>\n"
+        f"/ai <text> — Chat with the KaiNova Brain\n"
+        f"/analyze BTC — Deep AI market analysis\n"
+        f"/models — Switch AI model providers\n"
+        f"/id — View your Telegram ID (Debug)"
+    )
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_back_button())
+
+
 async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(update):
         return
@@ -1054,7 +1053,7 @@ async def error_handler(update: object, ctx: ContextTypes.DEFAULT_TYPE):
 
 async def post_init(app: Application):
     """Register all commands to the Telegram Bot API for the (/) menu."""
-    from telegram import BotCommand
+    from telegram import BotCommand, BotCommandScopeDefault
     commands = [
         BotCommand("start",     "Status dashboard"),
         BotCommand("help",      "Full command guide"),
@@ -1089,12 +1088,19 @@ async def post_init(app: Application):
         BotCommand("auth",      "Check OAuth status"),
         BotCommand("models",    "Switch AI models"),
     ]
-    await app.bot.set_my_commands(commands)
+    try:
+        from telegram import BotCommandScopeDefault, BotCommandScopeAllPrivateChats
+        await app.bot.set_my_commands(commands, scope=BotCommandScopeDefault())
+        await app.bot.set_my_commands(commands, scope=BotCommandScopeAllPrivateChats())
+        logger.success(f"✅ Successfully registered {len(commands)} commands to ALL Telegram scopes")
+    except Exception as e:
+        logger.error(f"❌ Failed to register commands: {e}")
 
 
 # ─────────────────────────────── BOT BUILDER ────────────────────────────────
 
 def build_bot() -> Application:
+    logger.info("Building KaiNova Application with post_init...")
     app = Application.builder().token(settings.telegram_bot_token).post_init(post_init).build()
 
     # Register all handlers
@@ -1127,6 +1133,7 @@ def build_bot() -> Application:
         ("dex",       cmd_dex),
         ("history",   cmd_history),
         ("risk",      cmd_risk),
+        ("id",       cmd_id),
         ("analyze",   cmd_analyze),
         ("ai",        cmd_ai),
         ("auth",      cmd_auth),
@@ -1134,6 +1141,8 @@ def build_bot() -> Application:
     ]
     for name, handler in handlers:
         app.add_handler(CommandHandler(name, handler))
+    
+    logger.info(f"Registered {len(handlers)} handlers to Dispatcher")
 
     app.add_handler(CallbackQueryHandler(callback_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
