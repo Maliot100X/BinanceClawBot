@@ -1005,47 +1005,44 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     text = (
         f"{BANNER}\n\n"
         f"📖 <b>KaiNova Master Command Reference</b>\n\n"
-        f"<b>⚙️ Bot Control & Meta</b>\n"
-        f"/start — Initialize bot & status menu\n"
-        f"/menu — Universal control dashboard\n"
-        f"/status — Engine & Connection health\n"
-        f"/auth — OAuth & Key status\n"
-        f"/help — This comprehensive guide\n\n"
-        f"<b>🤖 Autonomous Trading</b>\n"
-        f"/startbot — <b>ENABLE</b> Auto-Trading (Full AI AI)\n"
-        f"/stopbot — <b>PAUSE</b> All automated execution\n"
-        f"/set risk 1-5 — Change AI risk profile\n"
-        f"/risk — View current risk parameters\n\n"
-        f"<b>🦅 Market Analytics & Skills</b>\n"
-        f"/scan — Full market scan with indicators\n"
-        f"/scan BTC ETH — Scan specific symbols\n"
-        f"/skills — Overview of all 26 Binance skills\n"
-        f"/dex SOL — Real-time DexScreener search\n"
-        f"/mobula BTC — Mobula price & market cap\n"
-        f"/ticker BTCUSDT — Live price for any pair\n"
-        f"/signals — Latest Binance Web3 signals\n\n"
-        f"<b>💼 Portfolio & Logs</b>\n"
-        f"/portfolio — Balances & risk metrics\n"
-        f"/positions — View all open positions\n"
-        f"/profit — Detailed Daily PnL summary\n"
-        f"/history BTCUSDT — Recent trade history\n\n"
-        f"<b>🔥 Spot Trading Ops</b>\n"
-        f"/buy SYS QTY — Market buy\n"
-        f"/sell SYS QTY — Market sell\n"
-        f"/limit SIDE SYS QTY PX — Limit order\n"
-        f"/close SYS — Close specific position\n"
-        f"/closeall — Emergency close ALL positions\n\n"
-        f"<b>📉 Derivatives & Advanced</b>\n"
-        f"/futures buy BTC 0.1 — Market buy Futures\n"
-        f"/leverage BTC 5 — Set futures leverage\n"
-        f"/funding BTC — Check funding rates\n"
-        f"/earn — Simple Earn flexible products\n"
-        f"/convert BTC USDT 0.1 — Get convert quote\n\n"
-        f"<b>🧠 AI Brain Tools</b>\n"
-        f"/ai <text> — Chat with the KaiNova Brain\n"
-        f"/analyze BTC — Deep AI market analysis\n"
-        f"/models — Switch AI model providers\n"
-        f"/id — View your Telegram ID (Debug)"
+        f"<b>⚙️ SYSTEM & AUTH</b>\n"
+        f"• /start — Initialize & Dashboard\n"
+        f"• /menu — Interactive Control Hub\n"
+        f"• /status — Engine & Connection Health\n"
+        f"• /auth — OAuth & Key Management\n"
+        f"• /id — Your Telegram ID (Debug)\n\n"
+        f"<b>🤖 AUTONOMOUS ENGINE</b>\n"
+        f"• /startbot — 🟢 <b>ENABLE</b> Auto-Trading\n"
+        f"• /stopbot — 🛑 <b>PAUSE</b> All Automation\n"
+        f"• /set risk 1-5 — Change AI Risk Level\n"
+        f"• /risk — View Risk Management Stats\n\n"
+        f"<b>🦅 ANALYTICS & SKILLS</b>\n"
+        f"• /scan — Full Market Dashboard\n"
+        f"• /skills — List all 26 Binance Skills\n"
+        f"• /dex <coin> — 🦅 DexScreener Search\n"
+        f"• /mobula <coin> — 🐋 Mobula Analytics\n"
+        f"• /ticker <pair> — Live Price Ticker\n"
+        f"• /signals — Web3 Trading Signals\n\n"
+        f"<b>💼 PORTFOLIO & PNL</b>\n"
+        f"• /portfolio — Wallet & Balance Check\n"
+        f"• /positions — Managed Active Trades\n"
+        f"• /profit — Detailed Daily PnL Report\n"
+        f"• /history — Recent Execution Logs\n\n"
+        f"<b>🔥 TRADING OPERATIONS</b>\n"
+        f"• /buy <pair> <qty> — Market Buy\n"
+        f"• /sell <pair> <qty> — Market Sell\n"
+        f"• /limit <side> <pair> <qty> <px>\n"
+        f"• /close <pair> — Close Position\n"
+        f"• /closeall — 💀 <b>EMERGENCY ESCAPES</b>\n\n"
+        f"<b>📉 ADVANCED & BRAIN</b>\n"
+        f"• /futures — Derivatives Dashboard\n"
+        f"• /leverage — Set Futures Leverage\n"
+        f"• /funding — Funding Rate Check\n"
+        f"• /earn — Simple Earn Status\n"
+        f"• /convert — Quick Asset Swap\n"
+        f"• /ai <text> — Chat with the Brain\n"
+        f"• /analyze <coin> — Deep AI Intelligence\n"
+        f"• /models — Switch AI AI Providers"
     )
     await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_back_button())
 
@@ -1074,38 +1071,39 @@ async def post_init(app: Application):
     """Register all commands to the Telegram Bot API for the (/) menu."""
     from telegram import BotCommand, BotCommandScopeDefault
     commands = [
-        BotCommand("start",     "Status dashboard"),
-        BotCommand("help",      "Full command guide"),
-        BotCommand("menu",      "Interactive menu"),
-        BotCommand("startbot",  "ENABLE Auto-Trading"),
-        BotCommand("stopbot",   "PAUSE Auto-Trading"),
-        BotCommand("set",       "Set risk level (1-5)"),
-        BotCommand("skills",    "List all 26 skills"),
-        BotCommand("scan",      "Market scanner"),
-        BotCommand("portfolio", "Balances & PnL"),
-        BotCommand("positions", "Active positions"),
-        BotCommand("profit",    "Daily performance"),
-        BotCommand("status",    "Check health"),
-        BotCommand("buy",       "Market buy"),
-        BotCommand("sell",      "Market sell"),
-        BotCommand("limit",     "Limit order"),
-        BotCommand("close",     "Close position"),
-        BotCommand("closeall",  "Emergency close"),
-        BotCommand("futures",   "Futures trading"),
-        BotCommand("leverage",  "Set leverage"),
-        BotCommand("funding",   "Check funding"),
-        BotCommand("ticker",    "Price ticker"),
-        BotCommand("signals",   "Trade signals"),
-        BotCommand("earn",      "Simple Earn"),
-        BotCommand("convert",   "Quick convert"),
-        BotCommand("mobula",    "Mobula Analytics"),
-        BotCommand("dex",       "DexScreener search"),
-        BotCommand("history",   "Trade history"),
-        BotCommand("risk",      "Risk summary"),
-        BotCommand("analyze",   "AI Deep analysis"),
-        BotCommand("ai",        "Ask the AI Brain"),
-        BotCommand("auth",      "Check OAuth status"),
-        BotCommand("models",    "Switch AI models"),
+        BotCommand("start",     "🚀 Status & Dashboard"),
+        BotCommand("help",      "📖 Full Command Guide"),
+        BotCommand("menu",      "🎮 Interactive Menu"),
+        BotCommand("startbot",  "🟢 ENABLE Auto-Trading"),
+        BotCommand("stopbot",   "🛑 PAUSE Auto-Trading"),
+        BotCommand("set",       "⚙️ Set Risk Level (1-5)"),
+        BotCommand("skills",    "💡 List 26 Binance Skills"),
+        BotCommand("scan",      "🔍 Market Scanner"),
+        BotCommand("portfolio", "💼 Balances & PnL"),
+        BotCommand("positions", "📊 Active Positions"),
+        BotCommand("profit",    "💹 Daily Performance"),
+        BotCommand("status",    "🌐 System Health"),
+        BotCommand("buy",       "🟢 Market Buy"),
+        BotCommand("sell",      "🔴 Market Sell"),
+        BotCommand("limit",     "📝 Limit Order"),
+        BotCommand("close",     "✖️ Close Position"),
+        BotCommand("closeall",  "💀 EMERGENCY CLOSE ALL"),
+        BotCommand("futures",   "📉 Futures Trading"),
+        BotCommand("leverage",  "🦾 Set Leverage"),
+        BotCommand("funding",   "💸 Check Funding"),
+        BotCommand("ticker",    "💹 Price Ticker"),
+        BotCommand("signals",   "📡 Trade Signals"),
+        BotCommand("earn",      "🏦 Simple Earn"),
+        BotCommand("convert",   "💱 Quick Convert"),
+        BotCommand("mobula",    "🐋 Mobula Analytics"),
+        BotCommand("dex",       "🦅 DexScreener Search"),
+        BotCommand("history",   "📜 Trade History"),
+        BotCommand("risk",      "🛡️ Risk Management"),
+        BotCommand("analyze",   "🧠 Deep AI Analysis"),
+        BotCommand("ai",        "🤖 Ask the AI Brain"),
+        BotCommand("auth",      "🔑 OAuth Status"),
+        BotCommand("models",    "🧬 AI Model Engine"),
+        BotCommand("id",        "💳 Your Telegram ID"),
     ]
     try:
         from telegram import BotCommandScopeDefault, BotCommandScopeAllPrivateChats
