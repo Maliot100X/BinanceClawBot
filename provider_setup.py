@@ -187,41 +187,15 @@ def test_provider():
             
         payload = {"model": test_model, "messages": [{"role": "user", "content": "Say hello"}], "max_tokens": 10}
     elif provider == "antigravity":
-        # Antigravity uses Cloud Code Assist API via OAuth token
-        url = "https://daily-cloudcode-pa.sandbox.googleapis.com/v1internal/codeAssist:generateCode"
+        # Antigravity OAuth uses Bearer token with standard Gemini API
+        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
-            "User-Agent": "antigravity/1.18.3 windows/amd64",
-            "X-Goog-Api-Client": "google-cloud-sdk vscode_cloudshelleditor/0.1",
         }
         payload = {
-            "model": "models/gemini-2.5-flash",
-            "contents": [{"parts": [{"text": "Reply with only: hello"}]}],
-            "generationConfig": {"maxOutputTokens": 10}
+            "contents": [{"parts": [{"text": "Reply with only: hello"}]}]
         }
-        # Try direct Gemini API as fallback test
-        try:
-            r = httpx.post(url, headers=headers, json=payload, timeout=20.0)
-            if r.status_code == 200:
-                print(f"  \u2705 WORKING! Antigravity Cloud Code connected.")
-                return True
-            else:
-                # Fallback: try generativelanguage endpoint
-                url2 = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-                headers2 = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-                payload2 = {"contents": [{"parts": [{"text": "Say hello in one word"}]}]}
-                r2 = httpx.post(url2, headers=headers2, json=payload2, timeout=20.0)
-                if r2.status_code == 200:
-                    text = r2.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    print(f"  \u2705 WORKING via Gemini API! AI says: {text.strip()}")
-                    return True
-                else:
-                    print(f"  \u274c Error {r.status_code}: {r.text[:200]}")
-                    return False
-        except Exception as e:
-            print(f"  \u274c Antigravity connection failed: {e}")
-            return False
     else:
         url = "https://openrouter.ai/api/v1/chat/completions"
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "HTTP-Referer": "https://github.com/Maliot100X/BinanceClawBot"}
@@ -231,7 +205,7 @@ def test_provider():
         r = httpx.post(url, headers=headers, json=payload, timeout=20.0)
         if r.status_code == 200:
             resp = r.json()
-            if provider == "gemini":
+            if provider in ("gemini", "antigravity"):
                 text = resp["candidates"][0]["content"]["parts"][0]["text"]
             else:
                 text = resp["choices"][0]["message"]["content"]
