@@ -94,15 +94,32 @@ def show_status():
     for key, p in PROVIDERS.items():
         if p["id"] == "ollama":
             url = os.environ.get(p["env_var"], p["default"])
-            print(f"  ✅ {p['name']:<14} — {url}")
+            print(f"  OK {p['name']:<22} -- {url}")
+            continue
+        
+        # Antigravity uses OAuth tokens, not API keys
+        if p["id"] == "antigravity":
+            ag_token_path = BASE_DIR / ".tokens" / "antigravity_token.json"
+            if ag_token_path.exists():
+                try:
+                    ag_data = json.loads(ag_token_path.read_text())
+                    if ag_data.get("access_token") and ag_data.get("expires_at", 0) > time.time():
+                        proj = ag_data.get("project_id", "unknown")
+                        print(f"  OK {p['name']:<22} -- CONNECTED (Project: {proj})")
+                    else:
+                        print(f"  -- {p['name']:<22} -- TOKEN EXPIRED")
+                except:
+                    print(f"  -- {p['name']:<22} -- CORRUPT TOKEN")
+            else:
+                print(f"  -- {p['name']:<22} -- NOT CONNECTED")
             continue
 
         val = os.environ.get(p["env_var"], "")
         if val and val not in ("", "your_key_here"):
             masked = val[:8] + "..." + val[-4:]
-            print(f"  ✅ {p['name']:<14} — {masked}")
+            print(f"  OK {p['name']:<22} -- {masked}")
         else:
-            print(f"  ❌ {p['name']:<14} — NOT SET")
+            print(f"  -- {p['name']:<22} -- NOT SET")
     
     print("-" * 50)
 
@@ -115,8 +132,19 @@ def test_provider():
     provider, token = oauth.best_token()
     
     if not token:
-        print("❌ No AI provider configured or selected. Run setup.")
-        return False
+        # For antigravity, also try loading token directly
+        active_prov = os.environ.get("ACTIVE_AI_PROVIDER", "").lower()
+        if active_prov == "antigravity":
+            ag_path = BASE_DIR / ".tokens" / "antigravity_token.json"
+            if ag_path.exists():
+                try:
+                    ag_data = json.loads(ag_path.read_text())
+                    token = ag_data.get("access_token")
+                    provider = "antigravity"
+                except: pass
+        if not token:
+            print("  No AI provider configured or selected. Run setup.")
+            return False
     
     print(f"  Active Provider: {provider.upper()}")
     if provider != "ollama":
@@ -269,7 +297,7 @@ def setup_provider():
             return
 
     if prov["id"] == "antigravity":
-        print("\n\ud83e\uddec Google Antigravity Setup (OAuth)")
+        print("\n[AG] Google Antigravity Setup (OAuth)")
         print("  This will open Google login in your browser.")
         print("  You'll get access to: Gemini 3 Pro, Claude Opus 4.6, etc.")
         print("")

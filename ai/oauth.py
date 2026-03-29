@@ -111,8 +111,16 @@ class MultiOAuthManager:
         params.update(cfg.get("extra_params", {}))
         
         if provider == "gemini" and cfg["client_id"] == "google-sdk-client-id":
-             logger.warning("⚠️ Using placeholder Gemini Client ID. Browser login WILL FAIL unless you have configured a Google Cloud Project.")
-             logger.warning("👉 Recommendation: Use 'Direct API Key' (Option 2) in provider_setup.py instead.")
+             logger.warning("Using placeholder Gemini Client ID. Browser login WILL FAIL unless you have configured a Google Cloud Project.")
+             logger.warning("Recommendation: Use 'Direct API Key' (Option 2) in provider_setup.py instead.")
+
+        if provider == "antigravity" and not cfg["client_id"]:
+             logger.error("ANTIGRAVITY_CLIENT_ID is not set in .env! Please add the Antigravity credentials first.")
+             print("  ERROR: ANTIGRAVITY_CLIENT_ID is empty in your .env file.")
+             print("  Add these to your .env:")
+             print("    ANTIGRAVITY_CLIENT_ID='your-client-id'")
+             print("    ANTIGRAVITY_CLIENT_SECRET='your-client-secret'")
+             return None
 
         auth_url = f"{cfg['auth_url']}?{urllib.parse.urlencode(params)}"
         logger.info(f"Opening browser for {provider} login...")
