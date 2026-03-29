@@ -24,9 +24,31 @@ class RiskState:
 class RiskManager:
     def __init__(self):
         self.state = RiskState()
-        self._max_pos_pct = settings.max_position_size_pct / 100
-        self._max_daily_loss_pct = settings.max_daily_loss_pct / 100
-        self._max_lev = settings.max_leverage
+        self.risk_level = 3  # Default: Balanced
+        self._apply_level_params()
+
+    def _apply_level_params(self):
+        """Maps Level 1-5 to actual risk parameters."""
+        # [PosSize%, DailyLoss%, MaxLev]
+        levels = {
+            1: (0.02, 0.03, 2),   # Conservative
+            2: (0.05, 0.05, 3),   # Low
+            3: (0.10, 0.10, 5),   # Balanced (Original Default)
+            4: (0.20, 0.15, 10),  # High-Yield
+            5: (0.40, 0.25, 20),  # Aggressive (MAX)
+        }
+        p, dl, l = levels.get(self.risk_level, (0.10, 0.10, 5))
+        self._max_pos_pct = p
+        self._max_daily_loss_pct = dl
+        self._max_lev = l
+
+    def set_risk_level(self, level: int) -> bool:
+        if 1 <= level <= 5:
+            self.risk_level = level
+            self._apply_level_params()
+            logger.info(f"Risk level set to {level}: Pos={self._max_pos_pct:.0%}, Loss={self._max_daily_loss_pct:.0%}, Lev={self._max_lev}x")
+            return True
+        return False
 
     def check_daily_loss(self, portfolio_value: float) -> bool:
         """Returns True if trading is allowed (daily loss limit not hit)."""
@@ -42,8 +64,10 @@ class RiskManager:
     def calc_position_size(self, portfolio_value: float, price: float) -> float:
         """Returns quantity to trade based on max position size rule."""
         max_usdt = portfolio_value * self._max_pos_pct
-        max_usdt = min(max_usdt, settings.default_trade_usdt)
-        return round(max_usdt / price, 6) if price > 0 else 0.0
+        # Still cap at default trade USDT if it exists, to avoid unintended huge orders
+        max_limit = getattr(settings, 'default_trade_usdt', 100)
+        final_usdt = min(max_usdt, max_limit * (self.risk_level / 1.5)) # Scale cap by level
+        return round(final_usdt / price, 6) if price > 0 else 0.0
 
     def validate_leverage(self, leverage: int) -> int:
         return min(leverage, self._max_lev)
@@ -63,10 +87,11 @@ class RiskManager:
     def summary(self) -> dict:
         return {
             "active": self.state.bot_active,
+            "risk_level": self.risk_level,
             "daily_pnl": round(self.state.daily_pnl_usdt, 2),
             "daily_loss": round(self.state.daily_loss_usdt, 2),
-            "max_daily_loss_pct": settings.max_daily_loss_pct,
-            "max_position_pct": settings.max_position_size_pct,
+            "max_daily_loss_pct": round(self._max_daily_loss_pct * 100, 1),
+            "max_position_pct": round(self._max_pos_pct * 100, 1),
             "max_leverage": self._max_lev,
         }
 

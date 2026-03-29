@@ -41,6 +41,24 @@ async def run_cycle():
         risk_manager.set_active(False)
         return
 
+    # 1. AI-DRIVEN AUTONOMOUS EXECUTION (High Tier)
+    from ai.codex_agent import codex_agent
+    try:
+        # Prompt the AI Brain to perform an autonomous cycle
+        # This allows the AI to use all 26 skills (Futures, Scalping, Arbitrage, etc.)
+        prompt = (
+            f"AUTONOMOUS CYCLE START. Risk Level: {risk_manager.risk_level}. "
+            f"Mandate: MAXIMIZE WIN PERCENTAGE and TOTAL PNL. "
+            f"Analyze WATCHLIST {WATCHLIST} and execute any high-confidence trades now."
+        )
+        logger.info("🧠 Brain initiating tactical review...")
+        response = await codex_agent.think(prompt)
+        # We don't notify the full response to avoid spam, but we log it
+        logger.debug(f"AI Tactical Response: {response[:200]}...")
+    except Exception as e:
+        logger.error(f"AI Tactical error: {e}")
+
+    # 2. FAILSAFE TECHNICAL EXECUTION (Spot Baseline)
     for symbol in WATCHLIST:
         try:
             klines = await client.get_klines(symbol, "1h", 200)
@@ -48,24 +66,24 @@ async def run_cycle():
             if not ind: continue
             sig = generate_signal(ind)
 
-            if sig.signal == Signal.BUY and sig.confidence > 70:
+            if sig.signal == Signal.BUY and sig.confidence > 75:
                 qty = risk_manager.calc_position_size(usdt_bal, ind.close)
                 if qty > 0 and symbol not in {p["symbol"] for p in order_engine.position_summary()}:
                     result = await order_engine.place_market_buy(symbol, qty)
                     if result.get("status") == "ok":
                         await _notify(
-                            f"✅ *BUY {symbol}*\n"
+                            f"✅ *AI BUY {symbol}*\n"
                             f"Price: ${ind.close:,.4f} | Qty: {qty}\n"
-                            f"Confidence: {sig.confidence:.0f}% | {sig.reason}\n"
+                            f"Reason: {sig.reason}\n"
                             f"SL: ${result.get('sl',0):,.4f} | TP: ${result.get('tp',0):,.4f}"
                         )
 
-            elif sig.signal == Signal.SELL and sig.confidence > 70:
+            elif sig.signal == Signal.SELL and sig.confidence > 75:
                 pos = next((p for p in order_engine.position_summary() if p["symbol"] == symbol), None)
                 if pos:
                     result = await order_engine.place_market_sell(symbol, pos["qty"])
                     if result.get("status") == "ok":
-                        await _notify(f"📉 *SELL {symbol}* | Confidence: {sig.confidence:.0f}%")
+                        await _notify(f"📉 *AI SELL {symbol}* | Confidence: {sig.confidence:.0f}%")
 
         except Exception as e:
             logger.debug(f"Cycle error {symbol}: {e}")

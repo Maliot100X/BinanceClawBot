@@ -269,45 +269,47 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     text = (
         f"{BANNER}\n\n"
-        f"📖 <b>KaiNova Command Reference — FULL SUITE</b>\n\n"
+        f"📖 <b>KaiNova Master Command Reference</b>\n\n"
         f"<b>⚙️ Bot Control & Meta</b>\n"
-        f"/start — Initialize bot & show menu\n"
-        f"/menu — Show interactive dashboard\n"
-        f"/status — System & connection health\n"
+        f"/start — Initialize bot & status menu\n"
+        f"/menu — Universal control dashboard\n"
+        f"/status — Engine & Connection health\n"
+        f"/auth — OAuth & Key status\n"
         f"/help — This comprehensive guide\n\n"
-        f"<b>🤖 Auto-Trading (Risk Guard)</b>\n"
-        f"/startbot — ENABLE autonomous trading loop\n"
-        f"/stopbot — PAUSE autonomous trading\n"
-        f"/risk — View active risk & daily limits\n\n"
-        f"<b>🦅 Market Analytics</b>\n"
-        f"/scan — Full market scan with signals\n"
-        f"/scan BTC ETH SOL — Scan specific coins\n"
-        f"/dex SOL — Search pairs on Dexscreener\n"
-        f"/mobula BTC — Market analytics (Price/Cap)\n"
-        f"/ticker BTCUSDT — Live price for any symbol\n"
-        f"/signals — View latest buy/sell signals\n\n"
-        f"<b>💼 Portfolio Management</b>\n"
-        f"/portfolio — Balances & risk summary\n"
+        f"<b>🤖 Autonomous Trading</b>\n"
+        f"/startbot — <b>ENABLE</b> Auto-Trading (Full AI AI)\n"
+        f"/stopbot — <b>PAUSE</b> All automated execution\n"
+        f"/set risk 1-5 — Change AI risk profile\n"
+        f"/risk — View current risk parameters\n\n"
+        f"<b>🦅 Market Analytics & Skills</b>\n"
+        f"/scan — Full market scan with indicators\n"
+        f"/scan BTC ETH — Scan specific symbols\n"
+        f"/skills — Overview of all 26 Binance skills\n"
+        f"/dex SOL — Real-time DexScreener search\n"
+        f"/mobula BTC — Mobula price & market cap\n"
+        f"/ticker BTCUSDT — Live price for any pair\n"
+        f"/signals — Latest Binance Web3 signals\n\n"
+        f"<b>💼 Portfolio & Logs</b>\n"
+        f"/portfolio — Balances & risk metrics\n"
         f"/positions — View all open positions\n"
-        f"/profit — Detailed Daily PnL report\n"
-        f"/history BTCUSDT — Recent trade logs\n\n"
-        f"<b>🔥 Spot Trading</b>\n"
-        f"/buy BTCUSDT 0.001 — Market buy\n"
-        f"/sell BTCUSDT 0.001 — Market sell\n"
-        f"/limit BUY BTCUSDT 0.001 60000 — Limit order\n"
-        f"/close BTCUSDT — Close specific position\n"
+        f"/profit — Detailed Daily PnL summary\n"
+        f"/history BTCUSDT — Recent trade history\n\n"
+        f"<b>🔥 Spot Trading Ops</b>\n"
+        f"/buy SYS QTY — Market buy\n"
+        f"/sell SYS QTY — Market sell\n"
+        f"/limit SIDE SYS QTY PX — Limit order\n"
+        f"/close SYS — Close specific position\n"
         f"/closeall — Emergency close ALL positions\n\n"
-        f"<b>📉 Advanced (Futures & Earn)</b>\n"
-        f"/futures buy BTCUSDT 0.1 — Market buy Futures\n"
-        f"/leverage BTCUSDT 5 — Set futures leverage\n"
-        f"/funding BTCUSDT — Check funding rates\n"
-        f"/earn — View Simple Earn products\n"
+        f"<b>📉 Derivatives & Advanced</b>\n"
+        f"/futures buy BTC 0.1 — Market buy Futures\n"
+        f"/leverage BTC 5 — Set futures leverage\n"
+        f"/funding BTC — Check funding rates\n"
+        f"/earn — Simple Earn flexible products\n"
         f"/convert BTC USDT 0.1 — Get convert quote\n\n"
-        f"<b>🧠 AI Brain</b>\n"
-        f"/ai <text> — Ask the KaiNova Brain anything\n"
-        f"/analyze BTCUSDT — Deep AI market analysis\n"
-        f"/models — List & switch AI model providers\n"
-        f"/auth — Check Authentication status"
+        f"<b>🧠 AI Brain Tools</b>\n"
+        f"/ai <text> — Chat with the KaiNova Brain\n"
+        f"/analyze BTC — Deep AI market analysis\n"
+        f"/models — Switch AI model providers"
     )
     await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_back_button())
 
@@ -648,6 +650,54 @@ async def cmd_dex(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=_back_button())
     except Exception as e:
         await update.message.reply_text(f"❌ Dexscreener Error: {e}")
+
+
+async def cmd_set(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(update):
+        return
+    args = ctx.args
+    if len(args) < 2 or args[0].lower() != "risk":
+        await update.message.reply_text(f"💡 Usage: <code>/set risk 1-5</code>\n\n1: Consv | 2: Low | 3: Bal | 4: High | 5: Aggro", parse_mode=ParseMode.HTML)
+        return
+    
+    try:
+        level = int(args[1])
+        from risk.risk_manager import risk_manager
+        if risk_manager.set_risk_level(level):
+            summary = risk_manager.summary()
+            await update.message.reply_text(
+                f"🛡️ <b>Risk Profile Updated: Level {level}</b>\n\n"
+                f"• Max Position: <b>{summary['max_position_pct']}%</b>\n"
+                f"• Daily Loss Limit: <b>{summary['max_daily_loss_pct']}%</b>\n"
+                f"• Max Leverage: <b>{summary['max_leverage']}x</b>\n\n"
+                f"✅ Engine re-calibrated for {'Aggressive' if level > 3 else 'Safe'} execution.",
+                parse_mode=ParseMode.HTML, reply_markup=_back_button()
+            )
+        else:
+            await update.message.reply_text("❌ Invalid level. Choose 1 to 5.")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Error: {e}")
+
+
+async def cmd_skills(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(update):
+        return
+    from skills.loader import SKILLS
+    text = (
+        f"{BANNER}\n\n"
+        f"🔧 <b>Binance Skills Hub — {len(SKILLS)} Active</b>\n\n"
+        f"1.  <b>Spot Trading:</b> Full market execution\n"
+        f"2.  <b>USDS-M Futures:</b> Up to 20x leverage\n"
+        f"3.  <b>Coin-M Futures:</b> Inverse trading\n"
+        f"4.  <b>Margin:</b> Borrowing & Isolated pairs\n"
+        f"5.  <b>Simple Earn:</b> Passive yield management\n"
+        f"6.  <b>Algo Tools:</b> TWAP/VWAP execution\n"
+        f"7.  <b>Mobula:</b> Professional market data\n"
+        f"8.  <b>DexScreener:</b> On-chain analytics\n"
+        f"9.  <b>Signals:</b> AI-generated bias validation\n\n"
+        f"<i>Plus 17 additional sub-account, VIP, and pay skills.</i>"
+    )
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_back_button())
 
 
 async def cmd_earn(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -1002,18 +1052,60 @@ async def error_handler(update: object, ctx: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Telegram error: {ctx.error}")
 
 
+async def post_init(app: Application):
+    """Register all commands to the Telegram Bot API for the (/) menu."""
+    from telegram import BotCommand
+    commands = [
+        BotCommand("start",     "Status dashboard"),
+        BotCommand("help",      "Full command guide"),
+        BotCommand("menu",      "Interactive menu"),
+        BotCommand("startbot",  "ENABLE Auto-Trading"),
+        BotCommand("stopbot",   "PAUSE Auto-Trading"),
+        BotCommand("set",       "Set risk level (1-5)"),
+        BotCommand("skills",    "List all 26 skills"),
+        BotCommand("scan",      "Market scanner"),
+        BotCommand("portfolio", "Balances & PnL"),
+        BotCommand("positions", "Active positions"),
+        BotCommand("profit",    "Daily performance"),
+        BotCommand("status",    "Check health"),
+        BotCommand("buy",       "Market buy"),
+        BotCommand("sell",      "Market sell"),
+        BotCommand("limit",     "Limit order"),
+        BotCommand("close",     "Close position"),
+        BotCommand("closeall",  "Emergency close"),
+        BotCommand("futures",   "Futures trading"),
+        BotCommand("leverage",  "Set leverage"),
+        BotCommand("funding",   "Check funding"),
+        BotCommand("ticker",    "Price ticker"),
+        BotCommand("signals",   "Trade signals"),
+        BotCommand("earn",      "Simple Earn"),
+        BotCommand("convert",   "Quick convert"),
+        BotCommand("mobula",    "Mobula Analytics"),
+        BotCommand("dex",       "DexScreener search"),
+        BotCommand("history",   "Trade history"),
+        BotCommand("risk",      "Risk summary"),
+        BotCommand("analyze",   "AI Deep analysis"),
+        BotCommand("ai",        "Ask the AI Brain"),
+        BotCommand("auth",      "Check OAuth status"),
+        BotCommand("models",    "Switch AI models"),
+    ]
+    await app.bot.set_my_commands(commands)
+
+
 # ─────────────────────────────── BOT BUILDER ────────────────────────────────
 
 def build_bot() -> Application:
-    app = Application.builder().token(settings.telegram_bot_token).build()
+    app = Application.builder().token(settings.telegram_bot_token).post_init(post_init).build()
 
-    # Register all commands
+    # Register all handlers
     handlers = [
         ("start",     cmd_start),
         ("help",      cmd_help),
         ("menu",      cmd_menu),
         ("startbot",  cmd_startbot),
         ("stopbot",   cmd_stopbot),
+        ("set",       cmd_set),
+        ("skills",    cmd_skills),
         ("scan",      cmd_scan),
         ("portfolio", cmd_portfolio),
         ("positions", cmd_positions),

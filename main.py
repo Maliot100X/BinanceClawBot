@@ -57,22 +57,7 @@ async def main():
     await app.initialize()
     await app.start()
         
-    # Register bot commands menu (Moved BEFORE loop)
-    from telegram import BotCommand
-    commands = [
-        BotCommand("status",    "System status"),
-        BotCommand("ai",        "Ask AI anything"),
-        BotCommand("scan",      "Market scan"),
-        BotCommand("portfolio", "Portfolio balance"),
-         BotCommand("positions", "Open positions"),
-        BotCommand("profit",    "Daily PnL"),
-        BotCommand("startbot",  "Enable auto-trading"),
-        BotCommand("stopbot",   "Pause auto-trading"),
-        BotCommand("signals",   "Trading signals"),
-        BotCommand("risk",      "Risk parameters"),
-        BotCommand("help",      "All commands"),
-    ]
-    await app.bot.set_my_commands(commands)
+    # Components are already fully configured via build_bot and post_init
     
     # Start 30-second scheduler as a background task
     asyncio.create_task(start_scheduler())
