@@ -45,9 +45,24 @@ E = {
 
 BANNER = (
     "╔══════════════════════════════╗\n"
-    "║  🤖  <b>KaiNova Trading Bot</b>  🤖  ║\n"
+    "║  🤖  KaiNova Trading Bot  🤖  ║\n"
     "╚══════════════════════════════╝"
 )
+
+WELCOME_MSG = (
+    f"{BANNER}\n\n"
+    f"🦾 <b>Welcome to KaiNova — Professional Autonomous Trading</b>\n\n"
+    f"You are now connected to the most advanced AI trading platform on Binance.\n\n"
+    f"<b>Integrated Stack:</b>\n"
+    f"• 🧠 <b>Dynamic Brain:</b> Multi-Provider Autonomous Intelligence\n"
+    f"• 📡 <b>26 Skills Hub:</b> Native Binance Spot/Futures/Margin/Algo\n"
+    f"• 🛡️ <b>Risk Guard:</b> Automated SL/TP, 10% Daily circuit breaker\n"
+    f"• 📊 <b>3D Dashboard:</b> Live monitoring at your fingertip\n\n"
+    f"🌐 <b>Dashboard:</b> https://kai-nova-showdown.vercel.app/\n\n"
+    f"Use the menu below or type /help for a full command reference."
+)
+
+
 
 AUTHORIZED_USERS = {int(settings.telegram_chat_id)}
 
@@ -252,7 +267,7 @@ async def cmd_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(update):
         return
     await update.message.reply_text(
-        f"{E['bot']} <b>KaiNova Trading Bot — Main Menu</b>",
+        WELCOME_MSG,
         parse_mode=ParseMode.HTML,
         reply_markup=_main_menu(),
     )
@@ -813,7 +828,7 @@ async def callback_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             pass
 
     if data == "cmd_menu":
-        await edit(f"{E['bot']} <b>KaiNova Main Menu</b>", _main_menu())
+        await edit(WELCOME_MSG, _main_menu())
 
     elif data == "cmd_scan":
         await edit(f"{E['scan']} Scanning...")
@@ -970,7 +985,11 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(update):
         await update.message.reply_text("🛑 <b>Unauthorized</b>\n\nYour ID is not recognized. Contact the operator.")
         return
-    await cmd_menu(update, ctx)
+    await update.message.reply_text(
+        WELCOME_MSG,
+        parse_mode=ParseMode.HTML,
+        reply_markup=_main_menu()
+    )
 
 
 async def cmd_id(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
