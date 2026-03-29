@@ -40,7 +40,7 @@ class OrderEngine:
         from core.client import get_client
         
         try:
-            client = get_client()
+            client = await get_client()
             acc = await client.get_account()
             balances = [f"{b['asset']}: {float(b['free']):.4f}" for b in acc.get("balances", []) if float(b["free"]) > 0 or float(b["locked"]) > 0]
             bal_str = " | ".join(balances[:3])
@@ -56,7 +56,7 @@ class OrderEngine:
             logger.error(f"Broadcast step failed: {e}")
 
     async def place_market_buy(self, symbol: str, qty: float, market: str = "SPOT", stop_loss_pct: float = 2.0, take_profit_pct: float = 4.0) -> dict:
-        client = get_client()
+        client = await get_client()
         result = {}
         await self._broadcast_trade_step("Action Start", symbol, f"MARKET BUY {qty}")
         
@@ -89,7 +89,7 @@ class OrderEngine:
             return {"status": "error", "error": str(e)}
 
     async def place_market_sell(self, symbol: str, qty: float, market: str = "SPOT") -> dict:
-        client = get_client()
+        client = await get_client()
         await self._broadcast_trade_step("Action Start", symbol, f"MARKET SELL {qty}")
         try:
             if market == "SPOT":
@@ -107,7 +107,7 @@ class OrderEngine:
             return {"status": "error", "error": str(e)}
 
     async def place_limit_order(self, symbol: str, side: str, qty: float, price: float, market: str = "SPOT") -> dict:
-        client = get_client()
+        client = await get_client()
         try:
             result = await client.place_spot_order(symbol, side, "LIMIT", quantity=qty, price=price, timeInForce="GTC")
             return {"status": "ok", "result": result}

@@ -1,0 +1,4 @@
+# KaiNova Global Constraints
+1. **Memory First Workflow:** Before proposing any changes to the codebase, you must read `memory.md` in the project root.
+2. **Zero Deletions:** You are forbidden from deleting, replacing entirely, or removing functioning code. You must perform surgically precise, additive-only modifications to files. 
+3. **Full Potential (GSD Suite):** You are expected to harness the GSD specialized roles via `USER-PROFILE.md` to conduct nyquist audits, architecture mapping, and deep debugging.

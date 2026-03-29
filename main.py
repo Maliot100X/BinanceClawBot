@@ -38,7 +38,7 @@ async def main():
 
     # 2. Verify Binance API Keys & Connection
     from core.client import get_client
-    client = get_client()
+    client = await get_client()
     api_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
     if api_key:
         logger.info(f"Checking Binance connectivity for key: ***{api_key[-4:]}...")

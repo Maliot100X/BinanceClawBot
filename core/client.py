@@ -29,11 +29,30 @@ class BinanceClient:
         self.futures_base = BINANCE_TESTNET_BASE if self.testnet else BINANCE_FUTURES_BASE
         self.coin_base = BINANCE_COIN_FUTURES_BASE
         self._session: aiohttp.ClientSession | None = None
+        self._time_offset: int = 0
         
         if self.api_key:
             logger.info(f"Binance Client initialized with key: ***{self.api_key[-4:]}")
         else:
             logger.warning("Binance Client: No API Key provided")
+
+    async def sync_time(self):
+        """Synchronizes local time with Binance server time."""
+        try:
+            start = time.time() * 1000
+            # Use raw request to avoid infinite recursion or signing issues before sync
+            session = await self._get_session()
+            async with session.get(f"{self.base}/api/v3/time") as r:
+                data = await r.json()
+                server_time = data["serverTime"]
+            
+            end = time.time() * 1000
+            # Calculate offset accounting for network latency
+            latency = (end - start) / 2
+            self._time_offset = int(server_time - (start + latency))
+            logger.success(f"Binance Time Sync: Offset {self._time_offset}ms | Latency {latency:.2f}ms")
+        except Exception as e:
+            logger.error(f"Binance Time Sync Failed: {e}")
 
     async def test_authentication(self) -> bool:
         """Pings account endpoint to verify keys."""
@@ -55,13 +74,19 @@ class BinanceClient:
     def _sign(self, params: dict) -> dict:
         if not self.secret:
             raise ValueError("Binance Secret Key missing - cannot sign request")
-        params["timestamp"] = int(time.time() * 1000)
-        query = "&".join(f"{k}={v}" for k, v in params.items())
+        
+        # Apply time offset and include recvWindow
+        params["timestamp"] = int(time.time() * 1000) + self._time_offset
+        params["recvWindow"] = 60000
+        
+        # Sort keys for signature consistency and url encoding
+        sorted_params = dict(sorted(params.items()))
+        query = "&".join(f"{k}={v}" for k, v in sorted_params.items())
         sig = hmac.new(
             self.secret.encode(), query.encode(), hashlib.sha256
         ).hexdigest()
-        params["signature"] = sig
-        return params
+        sorted_params["signature"] = sig
+        return sorted_params
 
     async def _request(self, method: str, url: str, params: dict | None = None, signed: bool = False) -> Any:
         session = await self._get_session()
@@ -70,7 +95,12 @@ class BinanceClient:
             async with session.request(method, url, params=p) as r:
                 if r.status == 401:
                     logger.error(f"Binance 401 Unauthorized | URL: {url} | Signed: {signed}")
-                    logger.error(f"Response: {await r.text()}")
+                if r.status == 400:
+                    logger.warning(f"Binance 400 Bad Request | URL: {url} | Params: {p}")
+                    # Only attempt one-time re-sync if 400 happens and we haven't synced with real offset yet
+                    if signed and self._time_offset == 0:
+                         logger.info("Suspected clock drift. Attempting re-sync...")
+                         await self.sync_time()
                 r.raise_for_status()
                 return await r.json()
         except aiohttp.ClientResponseError as e:
@@ -173,8 +203,10 @@ class BinanceClient:
 _client: BinanceClient | None = None
 
 
-def get_client(force_new: bool = False) -> BinanceClient:
+async def get_client(force_new: bool = False) -> BinanceClient:
     global _client
     if _client is None or force_new:
         _client = BinanceClient()
+        # Initialize sync immediately on creation
+        await _client.sync_time()
     return _client

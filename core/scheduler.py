@@ -72,7 +72,7 @@ async def run_cycle():
     if _cycle_counter % 10 == 0:
         await post_heartbeat()
 
-    client = get_client()
+    client = await get_client()
     try:
         account = await client.get_account()
         balances = account.get("balances", [])
@@ -85,22 +85,22 @@ async def run_cycle():
         risk_manager.set_active(False)
         return
 
-    # 1. AI-DRIVEN AUTONOMOUS EXECUTION (High Tier)
-    from ai.codex_agent import codex_agent
-    try:
-        # Prompt the AI Brain to perform an autonomous cycle
-        # This allows the AI to use all 26 skills (Futures, Scalping, Arbitrage, etc.)
-        prompt = (
-            f"AUTONOMOUS CYCLE START. Risk Level: {risk_manager.risk_level}. "
-            f"Mandate: MAXIMIZE WIN PERCENTAGE and TOTAL PNL. "
-            f"Analyze WATCHLIST {WATCHLIST} and execute any high-confidence trades now."
-        )
-        logger.info("🧠 Brain initiating tactical review...")
-        response = await codex_agent.think(prompt)
-        # We don't notify the full response to avoid spam, but we log it
-        logger.debug(f"AI Tactical Response: {response[:200]}...")
-    except Exception as e:
-        logger.error(f"AI Tactical error: {e}")
+    # 1. AI-DRIVEN AUTONOMOUS EXECUTION (High Tier: Rate-Limited to every 3 mins)
+    if _cycle_counter % 6 == 0:
+        from ai.codex_agent import codex_agent
+        try:
+            # Prompt the AI Brain to perform an autonomous cycle
+            prompt = (
+                f"AUTONOMOUS CYCLE START. Risk Level: {risk_manager.risk_level}. "
+                f"Mandate: MAXIMIZE WIN PERCENTAGE and TOTAL PNL. "
+                f"Analyze WATCHLIST {WATCHLIST} and execute any high-confidence trades now."
+            )
+            logger.info("🧠 Brain initiating tactical review...")
+            response = await codex_agent.think(prompt)
+            # We don't notify the full response to avoid spam, but we log it
+            logger.debug(f"AI Tactical Response: {response[:200]}...")
+        except Exception as e:
+            logger.error(f"AI Tactical error: {e}")
 
     # 2. FAILSAFE TECHNICAL EXECUTION (Spot Baseline)
     for symbol in WATCHLIST:

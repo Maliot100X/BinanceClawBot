@@ -185,7 +185,7 @@ async def health():
 @app.get("/portfolio")
 async def portfolio():
     try:
-        client = get_client()
+        client = await get_client()
         # Allow if API Key OR CLI Session exists
         binance_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
         if not binance_key and not check_cli_session():
@@ -208,7 +208,7 @@ async def positions():
 @app.get("/signals")
 async def signals():
     try:
-        client = get_client()
+        client = await get_client()
         binance_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
         if not binance_key and not check_cli_session():
              return {"signals": []}
@@ -229,7 +229,7 @@ async def signals():
 @app.post("/scan")
 async def scan(req: ScanReq):
     try:
-        client = get_client()
+        client = await get_client()
         binance_key = os.environ.get("BINANCE_API_KEY") or settings.binance_api_key
         if not binance_key and not check_cli_session(): return {"results": []}
         results = []
@@ -260,7 +260,7 @@ async def binance_config(cfg: BinanceConfig):
     os.environ["BINANCE_API_KEY"] = cfg.api_key
     os.environ["BINANCE_SECRET_KEY"] = cfg.secret_key
     # Force reset client
-    get_client(force_new=True)
+    await get_client(force_new=True)
     return {"status": "ok", "message": "Binance keys configured"}
 
 class AIConfig(BaseModel):

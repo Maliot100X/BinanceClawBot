@@ -23,6 +23,10 @@ KaiNova BinanceClawBot is a production-grade autonomous trading platform that co
 
 ## 🛠️ Installation & Setup
 
+### ⚡ AI Agent Skills Hub (One-Shot Setup)
+Deploy the entire KaiNova ecosystem instantly and without errors by passing our dedicated setup prompt to your AI Agent (e.g., OpenClaw, Claude Code, or Gemini).
+👉 **[Copy the `agentskill.md` Prompt Here](agentskill.md)**
+
 ### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/Maliot100X/BinanceClawBot.git

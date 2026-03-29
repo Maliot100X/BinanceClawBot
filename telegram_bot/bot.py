@@ -229,7 +229,7 @@ async def _fmt_profit() -> str:
 
 
 async def _fmt_status() -> str:
-    client = get_client()
+    client = await get_client()
     binance_ok = False
     server_time = "N/A"
     try:
@@ -282,7 +282,7 @@ async def cmd_startbot(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     # 1. Verify API connectivity
     try:
         from core.client import get_client
-        client = get_client()
+        client = await get_client()
         acc = await client.get_account()
         if not acc:
             await msg.edit_text("❌ <b>API Connection Failed</b> | Check your key/secret in .env", parse_mode=ParseMode.HTML)
@@ -505,7 +505,7 @@ async def cmd_leverage(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"{E['warn']} Usage: /leverage BTCUSDT 3")
         return
     symbol, lev = args[0].upper(), int(args[1])
-    client = get_client()
+    client = await get_client()
     result = await client.set_futures_leverage(symbol, lev)
     await update.message.reply_text(f"{E['check']} Leverage set: {result}", reply_markup=_back_button())
 
@@ -532,7 +532,7 @@ async def cmd_ticker(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     symbol = args[0].upper() if args else "BTCUSDT"
     if not symbol.endswith("USDT"):
         symbol += "USDT"
-    client = get_client()
+    client = await get_client()
     t = await client.get_ticker(symbol)
     chg = float(t.get("priceChangePercent", 0))
     icon = E["up"] if chg >= 0 else E["down"]
@@ -714,7 +714,7 @@ async def cmd_history(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     symbol = args[0].upper() if args else "BTCUSDT"
     if not symbol.endswith("USDT"):
         symbol += "USDT"
-    client = get_client()
+    client = await get_client()
     try:
         trades = await client.get_my_trades(symbol, limit=5)
         if not trades:
@@ -957,7 +957,7 @@ async def callback_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     elif data.startswith("quickbuy_"):
         symbol = data.replace("quickbuy_", "")
-        client = get_client()
+        client = await get_client()
         ticker = await client.get_ticker(symbol)
         price = float(ticker.get("lastPrice", 0))
         usdt = settings.default_trade_usdt

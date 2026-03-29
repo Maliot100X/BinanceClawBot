@@ -61,7 +61,7 @@ TOOLS = [
 
 
 async def _scan(symbols: list[str]) -> dict:
-    client = get_client()
+    client = await get_client()
     results = []
     for sym in symbols[:10]:
         try:
@@ -79,7 +79,7 @@ async def _scan(symbols: list[str]) -> dict:
 
 
 async def _portfolio() -> dict:
-    client = get_client()
+    client = await get_client()
     try:
         balances = await client.get_nonnegligible_balances()
         positions = order_engine.position_summary()
