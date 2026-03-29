@@ -18,15 +18,59 @@ _notify_cb = None  # Telegram notification callback injected by main.py
 def set_notify(cb): global _notify_cb; _notify_cb = cb
 
 async def _notify(msg: str):
+    """Notify both the main user and the specialized signal channel."""
     if _notify_cb:
         try: await _notify_cb(msg)
         except Exception: pass
+    
+    # Also broadcast to the signal channel if it exists
+    await broadcast_to_signal(msg)
 
+
+async def broadcast_to_signal(msg: str):
+    """Send specialized tactical updates to the BinanceClawSignal channel."""
+    try:
+        from core.client import get_client
+        # Avoid circular import, bot setup might be cleaner but this works for now
+        # We'll use a direct telegram bot instance if available, but for now we rely on the injected callback
+        # Actually, let's use the Bot token directly for reliability if callback fails
+        import httpx
+        url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+        payload = {
+            "chat_id": settings.telegram_signal_channel_id,
+            "text": msg,
+            "parse_mode": "HTML"
+        }
+        async with httpx.AsyncClient() as client:
+            await client.post(url, json=payload)
+    except Exception as e:
+        logger.warning(f"Tactical broadcast failed: {e}")
+
+
+async def post_heartbeat():
+    """5-minute heartbeat for specialized channel."""
+    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    msg = (
+        f"<b>🫀 KaiNova Heartbeat</b>\n"
+        f"🕒 Timestamp: <code>{now} UTC</code>\n"
+        f"🟢 <b>Bot Active</b> | Monitoring Market\n"
+        f"📡 <b>Signal Channel:</b> Operational"
+    )
+    await broadcast_to_signal(msg)
+
+
+_cycle_counter = 0
 
 async def run_cycle():
     """One 30-second trading cycle."""
+    global _cycle_counter
     if not risk_manager.is_active():
         return
+
+    _cycle_counter += 1
+    # 5-minute heartbeat (10 cycles of 30s)
+    if _cycle_counter % 10 == 0:
+        await post_heartbeat()
 
     client = get_client()
     try:

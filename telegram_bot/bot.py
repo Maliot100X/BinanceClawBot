@@ -276,18 +276,42 @@ async def cmd_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_startbot(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(update):
         return
-    risk_manager.set_active(True)
-    ctx.bot_data["auto_trade"] = True
-    text = (
-        f"{E['play']} <b>Auto-Trading ENABLED</b>\n\n"
-        f"The bot will scan every {settings.scan_interval_sec}s and\n"
-        f"execute trades when signals are strong.\n\n"
-        f"{E['risk']} Risk limits are always enforced:\n"
-        f"• Max position: {settings.max_position_size_pct}%\n"
-        f"• Daily loss limit: {settings.max_daily_loss_pct}%\n"
-        f"• Max leverage: {settings.max_leverage}x"
-    )
-    await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_back_button())
+    
+    msg = await update.message.reply_text("🚀 <b>KAINOVA ACTIVATING</b> | Risk Level: 3 | Autonomous Mode: ON", parse_mode=ParseMode.HTML)
+    
+    # 1. Verify API connectivity
+    try:
+        from core.client import get_client
+        client = get_client()
+        acc = await client.get_account()
+        if not acc:
+            await msg.edit_text("❌ <b>API Connection Failed</b> | Check your key/secret in .env", parse_mode=ParseMode.HTML)
+            return
+        
+        # 2. Extract and Log balances
+        balances = [f"{b['asset']}: {float(b['free']):.4f}" for b in acc.get("balances", []) if float(b["free"]) > 0 or float(b["locked"]) > 0]
+        bal_text = " | ".join(balances[:5]) # Show top 5
+        await msg.edit_text(
+            f"🚀 <b>KAINOVA ACTIVATED</b>\n\n"
+            f"✅ <b>API:</b> Connected (LIVE Account)\n"
+            f"📊 <b>Balances:</b> {bal_text}\n"
+            f"🛡️ <b>Risk:</b> Level {risk_manager.risk_level} Enforced",
+            parse_mode=ParseMode.HTML
+        )
+        
+        # 3. Enable Engine
+        risk_manager.set_active(True)
+        ctx.bot_data["auto_trade"] = True
+        
+        # 4. Signal Channel Blast
+        try:
+            from core.scheduler import broadcast_to_signal
+            await broadcast_to_signal(f"🟢 <b>SYSTEM START</b>\nKaiNova Autonomous Engine is now LIVE.\nRisk Level: {risk_manager.risk_level}\nInitial Balances: {bal_text}")
+        except: pass
+
+    except Exception as e:
+        logger.error(f"StartBot Error: {e}")
+        await msg.edit_text(f"❌ <b>Activation Error:</b> {str(e)}", parse_mode=ParseMode.HTML)
 
 
 async def cmd_stopbot(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -1010,6 +1034,7 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"• /menu — Interactive Control Hub\n"
         f"• /status — Engine & Connection Health\n"
         f"• /auth — OAuth & Key Management\n"
+        f"• /help — This Master Command Guide\n"
         f"• /id — Your Telegram ID (Debug)\n\n"
         f"<b>🤖 AUTONOMOUS ENGINE</b>\n"
         f"• /startbot — 🟢 <b>ENABLE</b> Auto-Trading\n"
@@ -1019,9 +1044,9 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"<b>🦅 ANALYTICS & SKILLS</b>\n"
         f"• /scan — Full Market Dashboard\n"
         f"• /skills — List all 26 Binance Skills\n"
-        f"• /dex <coin> — 🦅 DexScreener Search\n"
-        f"• /mobula <coin> — 🐋 Mobula Analytics\n"
-        f"• /ticker <pair> — Live Price Ticker\n"
+        f"• /dex [coin] — 🦅 DexScreener Search\n"
+        f"• /mobula [coin] — 🐋 Mobula Analytics\n"
+        f"• /ticker [pair] — Live Price Ticker\n"
         f"• /signals — Web3 Trading Signals\n\n"
         f"<b>💼 PORTFOLIO & PNL</b>\n"
         f"• /portfolio — Wallet & Balance Check\n"
@@ -1029,10 +1054,10 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"• /profit — Detailed Daily PnL Report\n"
         f"• /history — Recent Execution Logs\n\n"
         f"<b>🔥 TRADING OPERATIONS</b>\n"
-        f"• /buy <pair> <qty> — Market Buy\n"
-        f"• /sell <pair> <qty> — Market Sell\n"
-        f"• /limit <side> <pair> <qty> <px>\n"
-        f"• /close <pair> — Close Position\n"
+        f"• /buy [pair] [qty] — Market Buy\n"
+        f"• /sell [pair] [qty] — Market Sell\n"
+        f"• /limit [side] [pair] [qty] [px]\n"
+        f"• /close [pair] — Close Position\n"
         f"• /closeall — 💀 <b>EMERGENCY ESCAPES</b>\n\n"
         f"<b>📉 ADVANCED & BRAIN</b>\n"
         f"• /futures — Derivatives Dashboard\n"
@@ -1040,10 +1065,11 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"• /funding — Funding Rate Check\n"
         f"• /earn — Simple Earn Status\n"
         f"• /convert — Quick Asset Swap\n"
-        f"• /ai <text> — Chat with the Brain\n"
-        f"• /analyze <coin> — Deep AI Intelligence\n"
+        f"• /ai [text] — Chat with the Brain\n"
+        f"• /analyze [coin] — Deep AI Intelligence\n"
         f"• /models — Switch AI AI Providers"
     )
+
     await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=_back_button())
 
 

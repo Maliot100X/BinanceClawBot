@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     # ── Telegram ───────────────────────────────────────────
     telegram_bot_token: str = Field(default="8435117487:AAGOAgK2gJ9OxsGsnQ9bXbwcgSmKvTSIIOI", alias="TELEGRAM_BOT_TOKEN")
     telegram_chat_id: str = Field(default="7764037225", alias="TELEGRAM_CHAT_ID")
+    telegram_signal_channel_id: str = Field(default="-1003888445547", alias="TELEGRAM_SIGNAL_CHANNEL_ID")
 
     # ── Optional data sources ──────────────────────────────
     dexscreener_api: str = Field(default="", alias="DEXSCREENER_API")

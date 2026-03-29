@@ -34,9 +34,32 @@ class OrderEngine:
     def get_positions(self) -> list[Position]:
         return list(self._open_positions.values())
 
+    async def _broadcast_trade_step(self, step_name: str, symbol: str, details: str):
+        """Mandated logging format: [ACTION START] → [API CALL] → [RESULT/ERROR]"""
+        from core.scheduler import broadcast_to_signal
+        from core.client import get_client
+        
+        try:
+            client = get_client()
+            acc = await client.get_account()
+            balances = [f"{b['asset']}: {float(b['free']):.4f}" for b in acc.get("balances", []) if float(b["free"]) > 0 or float(b["locked"]) > 0]
+            bal_str = " | ".join(balances[:3])
+            
+            msg = (
+                f"<b>[{step_name.upper()}]</b> {symbol}\n"
+                f"📡 <b>API CALL:</b> {details}\n"
+                f"💰 <b>BALANCE CHECK:</b> {bal_str}\n"
+                f"⏭️ <b>NEXT ACTION:</b> Monitoring Cycle"
+            )
+            await broadcast_to_signal(msg)
+        except Exception as e:
+            logger.error(f"Broadcast step failed: {e}")
+
     async def place_market_buy(self, symbol: str, qty: float, market: str = "SPOT", stop_loss_pct: float = 2.0, take_profit_pct: float = 4.0) -> dict:
         client = get_client()
         result = {}
+        await self._broadcast_trade_step("Action Start", symbol, f"MARKET BUY {qty}")
+        
         try:
             if market == "SPOT":
                 result = await client.place_spot_order(symbol, "BUY", "MARKET", quantity=qty)
@@ -57,23 +80,29 @@ class OrderEngine:
                 await client.place_spot_order(symbol, "SELL", "STOP_LOSS_LIMIT",
                     quantity=qty, stopPrice=round(sl, 2), price=round(sl * 0.99, 2), timeInForce="GTC")
 
+            await self._broadcast_trade_step("Result Success", symbol, f"FILLED @ ${price:,.4f} | SL: {sl} | TP: {tp}")
             logger.info(f"BUY {symbol} qty={qty} price={price} SL={sl} TP={tp}")
             return {"status": "ok", "symbol": symbol, "side": "BUY", "qty": qty, "price": price, "sl": sl, "tp": tp}
         except Exception as e:
+            await self._broadcast_trade_step("Result Error", symbol, f"FAILED: {str(e)}")
             logger.error(f"Order failed: {e}")
             return {"status": "error", "error": str(e)}
 
     async def place_market_sell(self, symbol: str, qty: float, market: str = "SPOT") -> dict:
         client = get_client()
+        await self._broadcast_trade_step("Action Start", symbol, f"MARKET SELL {qty}")
         try:
             if market == "SPOT":
                 result = await client.place_spot_order(symbol, "SELL", "MARKET", quantity=qty)
             elif market == "FUTURES":
                 result = await client.place_futures_order(symbol, "SELL", "MARKET", quantity=qty)
+            
             self._open_positions.pop(symbol, None)
+            await self._broadcast_trade_step("Result Success", symbol, f"POSITION CLOSED (MARKET SELL)")
             logger.info(f"SELL {symbol} qty={qty}")
             return {"status": "ok", "symbol": symbol, "side": "SELL", "qty": qty}
         except Exception as e:
+            await self._broadcast_trade_step("Result Error", symbol, f"SELL FAILED: {str(e)}")
             logger.error(f"Sell failed: {e}")
             return {"status": "error", "error": str(e)}
 
