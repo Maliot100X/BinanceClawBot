@@ -401,41 +401,42 @@ class CodexAgent:
                         return f"⚠️ {provider} API error: {r.status_code}"
                     
                     resp = r.json()
-                    break
+                    
+                    # Standard OpenAI Result Parsing
+                    choices = resp.get("choices", [])
+                    if not choices:
+                        logger.error(f"NVIDIA/REST Error: No choices in response. {resp}")
+                        return f"⚠️ {provider} error: Empty response choices"
+                    
+                    choice = choices[0]
+                    msg = choice.get("message", {})
+                    content = msg.get("content")
+                    
+                    if choice.get("finish_reason") == "tool_calls" or "tool_calls" in msg:
+                        # Append assistant message with tool calls
+                        messages.append(msg)
+                        tool_msgs = []
+                        for tc in msg.get("tool_calls", []):
+                            fn, args_raw = tc["function"]["name"], tc["function"]["arguments"]
+                            try:
+                                args = json.loads(args_raw)
+                            except:
+                                logger.error(f"Failed to parse tool args: {args_raw}")
+                                args = {}
+                            res = await _dispatch(fn, args)
+                            tool_msgs.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(res)})
+                        messages.extend(tool_msgs)
+                        payload["messages"] = messages
+                        # Continue inner loop to next tool-integrated turn
+                        continue
+                    else:
+                        if content is None:
+                            logger.warning(f"AI:{provider} returned null content, using fallback empty string.")
+                            content = ""
+                        self._history.append({"role": "assistant", "content": content})
+                        return content
             else:
                 return f"⚠️ {provider} Rate Limit exceeded after 5 retries."
-                
-                # Standard OpenAI Result Parsing
-                choices = resp.get("choices", [])
-                if not choices:
-                    logger.error(f"NVIDIA/REST Error: No choices in response. {resp}")
-                    return f"⚠️ {provider} error: Empty response choices"
-                
-                choice = choices[0]
-                msg = choice.get("message", {})
-                content = msg.get("content")
-                
-                if choice.get("finish_reason") == "tool_calls" or "tool_calls" in msg:
-                    # Append assistant message with tool calls
-                    messages.append(msg)
-                    tool_msgs = []
-                    for tc in msg.get("tool_calls", []):
-                        fn, args_raw = tc["function"]["name"], tc["function"]["arguments"]
-                        try:
-                            args = json.loads(args_raw)
-                        except:
-                            logger.error(f"Failed to parse tool args: {args_raw}")
-                            args = {}
-                        res = await _dispatch(fn, args)
-                        tool_msgs.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(res)})
-                    messages.extend(tool_msgs)
-                    payload["messages"] = messages
-                else:
-                    if content is None:
-                        logger.warning(f"AI:{provider} returned null content, using fallback empty string.")
-                        content = ""
-                    self._history.append({"role": "assistant", "content": content})
-                    return content
         
         elif openai_compat == True: # Groq / SDK bridge
             choice = resp["choices"][0]
