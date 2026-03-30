@@ -272,7 +272,7 @@ class CodexAgent:
             "openrouter": "anthropic/claude-3.5-sonnet",
             "ollama": "llama3.3",
             "antigravity": "gemini-2.5-flash",
-            "nvidia": "deepseek-ai/deepseek-v3.1",
+            "nvidia": "moonshotai/kimi-k2.5",
         }
         
         # Override for specific cloud model naming if needed
@@ -369,9 +369,9 @@ class CodexAgent:
                     logger.error(f"Antigravity request failed: {e}")
                     return f"⚠️ Antigravity error: {str(e)}"
             elif provider == "nvidia":
-                # NVIDIA Build requires FULL model IDs (e.g. "deepseek-ai/deepseek-v3.1")
+                # NVIDIA Build requires FULL model IDs (e.g. "moonshotai/kimi-k2.5")
                 # model_id strips the namespace, so we MUST use NVIDIA_MODEL env var
-                nvidia_model = os.environ.get("NVIDIA_MODEL", "deepseek-ai/deepseek-v3.1")
+                nvidia_model = os.environ.get("NVIDIA_MODEL", "moonshotai/kimi-k2.5")
                 endpoint = "https://integrate.api.nvidia.com/v1/chat/completions"
                 headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
                 payload = {"model": nvidia_model, "messages": messages, "max_tokens": 4096}

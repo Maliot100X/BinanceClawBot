@@ -65,13 +65,13 @@ PROVIDERS = {
 
 # ── NVIDIA Build Free Model Catalog ──────────────────────────────────────────
 NVIDIA_MODELS = [
+    "moonshotai/kimi-k2.5",
     "deepseek-ai/deepseek-v3.1",
     "deepseek-ai/deepseek-v3.2",
     "minimaxai/minimax-m2.5",
     "z-ai/glm5",
-    "moonshotai/kimi-k2.5",
 ]
-NVIDIA_DEFAULT_MODEL = "deepseek-ai/deepseek-v3.1"
+NVIDIA_DEFAULT_MODEL = "moonshotai/kimi-k2.5"
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 
