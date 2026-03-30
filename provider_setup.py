@@ -442,11 +442,15 @@ def setup_provider():
         print(f"\n  🧪 Testing NVIDIA connection...")
         try:
             headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-            payload = {"model": selected_model, "messages": [{"role": "user", "content": "Say hello"}], "max_tokens": 10}
+            payload = {"model": selected_model, "messages": [{"role": "user", "content": "Say hello"}], "max_tokens": 100}
             r = httpx.post(f"{NVIDIA_BASE_URL}/chat/completions", headers=headers, json=payload, timeout=20.0)
             if r.status_code == 200:
-                text = r.json()["choices"][0]["message"]["content"]
-                print(f"  ✅ WORKING! {selected_model} says: {text.strip()}")
+                resp_json = r.json()
+                content = resp_json["choices"][0]["message"].get("content")
+                if content is not None:
+                    print(f"  ✅ WORKING! {selected_model} says: {str(content).strip()}")
+                else:
+                    print(f"  ✅ CONNECTED! {selected_model} returned empty response (Valid API Check).")
             else:
                 print(f"  ❌ Error {r.status_code}: {r.text[:200]}")
         except Exception as e:
