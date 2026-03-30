@@ -376,7 +376,8 @@ class CodexAgent:
                 headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
                 payload = {"model": nvidia_model, "messages": messages, "max_tokens": 4096}
                 openai_compat = "REST"
-                logger.info(f"NVIDIA Brain: model={nvidia_model}")
+                logger.debug(f"NVIDIA TRACE: endpoint={endpoint} model={nvidia_model}")
+                logger.debug(f"NVIDIA TRACE: payload_msgs={len(messages)} sys_prompt_len={len(messages[0]['content']) if messages else 0}")
             else:
                 return f"⚠️ Unknown provider: {provider}"
         except Exception as e:
@@ -384,28 +385,57 @@ class CodexAgent:
             return f"⚠️ {provider.upper()} Engine error: {str(e)}"
 
         if openai_compat == "REST":
-            for _ in range(5):
-                logger.info(f"[AI:{provider}] Requesting REST: {endpoint}")
+            for i in range(5):
+                logger.info(f"[AI:{provider}] Requesting REST: {endpoint} (Attempt {i+1})")
                 async with httpx.AsyncClient(timeout=60.0) as c:
                     r = await c.post(endpoint, headers=headers, json=payload)
-                    if r.status_code != 200: return f"⚠️ {provider} API error: {r.status_code}"
+                    
+                    if r.status_code == 429:
+                        wait = (2 ** i) + 1
+                        logger.warning(f"AI:{provider} Rate Limit (429). Retrying in {wait}s...")
+                        await asyncio.sleep(wait)
+                        continue
+                        
+                    if r.status_code != 200: 
+                        logger.error(f"AI:{provider} REST Error {r.status_code}: {r.text[:200]}")
+                        return f"⚠️ {provider} API error: {r.status_code}"
+                    
                     resp = r.json()
+                    break
+            else:
+                return f"⚠️ {provider} Rate Limit exceeded after 5 retries."
                 
                 # Standard OpenAI Result Parsing
-                choice = resp["choices"][0]
-                msg = choice["message"]
+                choices = resp.get("choices", [])
+                if not choices:
+                    logger.error(f"NVIDIA/REST Error: No choices in response. {resp}")
+                    return f"⚠️ {provider} error: Empty response choices"
+                
+                choice = choices[0]
+                msg = choice.get("message", {})
+                content = msg.get("content")
+                
                 if choice.get("finish_reason") == "tool_calls" or "tool_calls" in msg:
+                    # Append assistant message with tool calls
                     messages.append(msg)
                     tool_msgs = []
                     for tc in msg.get("tool_calls", []):
-                        fn, args = tc["function"]["name"], json.loads(tc["function"]["arguments"])
+                        fn, args_raw = tc["function"]["name"], tc["function"]["arguments"]
+                        try:
+                            args = json.loads(args_raw)
+                        except:
+                            logger.error(f"Failed to parse tool args: {args_raw}")
+                            args = {}
                         res = await _dispatch(fn, args)
                         tool_msgs.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(res)})
                     messages.extend(tool_msgs)
                     payload["messages"] = messages
                 else:
-                    self._history.append({"role": "assistant", "content": msg["content"]})
-                    return msg["content"]
+                    if content is None:
+                        logger.warning(f"AI:{provider} returned null content, using fallback empty string.")
+                        content = ""
+                    self._history.append({"role": "assistant", "content": content})
+                    return content
         
         elif openai_compat == True: # Groq / SDK bridge
             choice = resp["choices"][0]
