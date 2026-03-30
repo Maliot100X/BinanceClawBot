@@ -370,14 +370,23 @@ class CodexAgent:
                     return f"⚠️ Antigravity error: {str(e)}"
             elif provider == "nvidia":
                 # NVIDIA Build requires FULL model IDs (e.g. "moonshotai/kimi-k2.5")
-                # model_id strips the namespace, so we MUST use NVIDIA_MODEL env var
+                # Ensure we NEVER use a simple model name for NVIDIA cloud calls
                 nvidia_model = os.environ.get("NVIDIA_MODEL", "moonshotai/kimi-k2.5")
                 endpoint = "https://integrate.api.nvidia.com/v1/chat/completions"
-                headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-                payload = {"model": nvidia_model, "messages": messages, "max_tokens": 4096}
+                headers = {
+                    "Authorization": f"Bearer {token}", 
+                    "Content-Type": "application/json"
+                }
+                # NVIDIA Chat Completions Payload
+                payload = {
+                    "model": nvidia_model, 
+                    "messages": messages, 
+                    "max_tokens": 4096,
+                    "temperature": 0.5,
+                    "top_p": 1.0
+                }
                 openai_compat = "REST"
-                logger.debug(f"NVIDIA TRACE: endpoint={endpoint} model={nvidia_model}")
-                logger.debug(f"NVIDIA TRACE: payload_msgs={len(messages)} sys_prompt_len={len(messages[0]['content']) if messages else 0}")
+                logger.debug(f"NVIDIA [CLOUD] ROUTE: model={nvidia_model} endpoint={endpoint}")
             else:
                 return f"⚠️ Unknown provider: {provider}"
         except Exception as e:
