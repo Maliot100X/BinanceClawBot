@@ -221,22 +221,34 @@ def test_provider():
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "HTTP-Referer": "https://github.com/Maliot100X/BinanceClawBot"}
         payload = {"model": "google/gemini-2.5-flash", "messages": [{"role": "user", "content": "Say hello"}], "max_tokens": 10}
     
-    try:
-        r = httpx.post(url, headers=headers, json=payload, timeout=20.0)
-        if r.status_code == 200:
-            resp = r.json()
-            if provider in ("gemini", "antigravity"):
-                text = resp["candidates"][0]["content"]["parts"][0]["text"]
+    for i in range(3):
+        try:
+            r = httpx.post(url, headers=headers, json=payload, timeout=20.0)
+            if r.status_code == 429:
+                wait = (i + 1) * 2
+                print(f"  ⚠️ Rate Limit (429). Retrying in {wait}s... (Attempt {i+1}/3)")
+                time.sleep(wait)
+                continue
+                
+            if r.status_code == 200:
+                resp = r.json()
+                if provider in ("gemini", "antigravity"):
+                    text = resp["candidates"][0]["content"]["parts"][0].get("text", "")
+                else:
+                    text = resp["choices"][0]["message"].get("content", "")
+                
+                safe_text = str(text).strip() if text else "RECEIVED EMPTY RESPONSE"
+                print(f"  ✅ WORKING! AI says: {safe_text}")
+                return True
             else:
-                text = resp["choices"][0]["message"]["content"]
-            print(f"  ✅ WORKING! AI says: {text.strip()}")
-            return True
-        else:
-            print(f"  ❌ Error {r.status_code}: {r.text[:200]}")
+                print(f"  ❌ Error {r.status_code}: {r.text[:200]}")
+                return False
+        except Exception as e:
+            print(f"  ❌ Connection failed: {e}")
             return False
-    except Exception as e:
-        print(f"  ❌ Connection failed: {e}")
-        return False
+    
+    print("  ❌ Failed after 3 retries (Rate Limit).")
+    return False
 
 def setup_provider():
     """Interactive provider setup."""
