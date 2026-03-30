@@ -379,6 +379,81 @@ def setup_provider():
 
         set_active(prov["id"])
         return
+    elif prov["id"] == "nvidia":
+        print(f"\n🟢 NVIDIA Build Setup (FREE Cloud Models)")
+        print(f"  Base URL: {NVIDIA_BASE_URL}")
+        print(f"  Get your FREE key at: https://build.nvidia.com")
+        
+        current_key = os.environ.get("NVIDIA_API_KEY", "")
+        if current_key and current_key not in ("", "your_key_here"):
+            print(f"  Current API Key: {current_key[:12]}...{current_key[-4:]}")
+        
+        key = input(f"  Enter your NVIDIA API Key (nvapi-...): ").strip()
+        if not key:
+            if current_key:
+                key = current_key
+                print(f"  Using existing key.")
+            else:
+                print("  Skipped.")
+                return
+        
+        set_key(str(ENV_PATH), "NVIDIA_API_KEY", key)
+        os.environ["NVIDIA_API_KEY"] = key
+        print(f"  ✅ NVIDIA_API_KEY saved to .env")
+        
+        # Model Selection
+        print(f"\n📦 Available FREE NVIDIA Models:")
+        for i, m in enumerate(NVIDIA_MODELS, 1):
+            tag = " (DEFAULT - Best for Trading)" if m == NVIDIA_DEFAULT_MODEL else ""
+            print(f"  [{i}] {m}{tag}")
+        
+        # Try fetching live models from the API
+        print(f"\n  [L] List ALL models from NVIDIA API (live)")
+        print(f"  [S] Skip (use default: {NVIDIA_DEFAULT_MODEL})")
+        m_choice = input("  Choice: ").strip().upper()
+        
+        selected_model = NVIDIA_DEFAULT_MODEL
+        if m_choice == "L":
+            try:
+                headers = {"Authorization": f"Bearer {key}"}
+                r = httpx.get(f"{NVIDIA_BASE_URL}/models", headers=headers, timeout=10.0)
+                if r.status_code == 200:
+                    all_models = [m["id"] for m in r.json().get("data", [])]
+                    print(f"\n  📋 {len(all_models)} models available:")
+                    for i, m in enumerate(all_models[:30], 1):
+                        print(f"    [{i}] {m}")
+                    pick = input(f"\n  Enter number to select (or press Enter for default): ").strip()
+                    if pick.isdigit() and 1 <= int(pick) <= len(all_models[:30]):
+                        selected_model = all_models[int(pick) - 1]
+                else:
+                    print(f"  ❌ Could not fetch models: {r.status_code}")
+            except Exception as e:
+                print(f"  ❌ API error: {e}")
+        elif m_choice == "S" or m_choice == "":
+            pass
+        elif m_choice.isdigit() and 1 <= int(m_choice) <= len(NVIDIA_MODELS):
+            selected_model = NVIDIA_MODELS[int(m_choice) - 1]
+        
+        set_key(str(ENV_PATH), "NVIDIA_MODEL", selected_model)
+        os.environ["NVIDIA_MODEL"] = selected_model
+        print(f"  🧠 Active NVIDIA Model: {selected_model}")
+        
+        # Quick connectivity test
+        print(f"\n  🧪 Testing NVIDIA connection...")
+        try:
+            headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+            payload = {"model": selected_model, "messages": [{"role": "user", "content": "Say hello"}], "max_tokens": 10}
+            r = httpx.post(f"{NVIDIA_BASE_URL}/chat/completions", headers=headers, json=payload, timeout=20.0)
+            if r.status_code == 200:
+                text = r.json()["choices"][0]["message"]["content"]
+                print(f"  ✅ WORKING! {selected_model} says: {text.strip()}")
+            else:
+                print(f"  ❌ Error {r.status_code}: {r.text[:200]}")
+        except Exception as e:
+            print(f"  ❌ Connection failed: {e}")
+        
+        set_active(prov["id"])
+        return
     else:
         key = input(f"  Enter your {prov['name']} API key: ").strip()
     
