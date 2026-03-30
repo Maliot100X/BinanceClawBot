@@ -191,6 +191,15 @@ class CodexAgent:
                     url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
                     r = await c.get(f"{url}/api/tags")
                     return [m["name"] for m in r.json().get("models", [])]
+                elif provider == "nvidia":
+                    nvidia_url = "https://integrate.api.nvidia.com/v1"
+                    r = await c.get(f"{nvidia_url}/models", headers={"Authorization": f"Bearer {token}"})
+                    if r.status_code == 200:
+                        return [m["id"] for m in r.json().get("data", [])]
+                    return [
+                        "deepseek-ai/deepseek-v3.1", "deepseek-ai/deepseek-v3.2",
+                        "minimaxai/minimax-m2.5", "z-ai/glm5", "moonshotai/kimi-k2.5",
+                    ]
         except Exception as e:
             logger.error(f"Failed to fetch models for {provider}: {e}")
         return [self._model]
@@ -263,6 +272,7 @@ class CodexAgent:
             "openrouter": "anthropic/claude-3.5-sonnet",
             "ollama": "llama3.3",
             "antigravity": "gemini-2.5-flash",
+            "nvidia": "deepseek-ai/deepseek-v3.1",
         }
         
         # Override for specific cloud model naming if needed
@@ -358,6 +368,14 @@ class CodexAgent:
                 except Exception as e:
                     logger.error(f"Antigravity request failed: {e}")
                     return f"⚠️ Antigravity error: {str(e)}"
+            elif provider == "nvidia":
+                nvidia_model = model_for_request
+                if "codex" in nvidia_model.lower() or "gpt" in nvidia_model.lower():
+                    nvidia_model = CODEX_MAPPING.get("nvidia", "deepseek-ai/deepseek-v3.1")
+                endpoint = "https://integrate.api.nvidia.com/v1/chat/completions"
+                headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+                payload = {"model": nvidia_model, "messages": messages, "max_tokens": 4096}
+                openai_compat = "REST"
             else:
                 return f"⚠️ Unknown provider: {provider}"
         except Exception as e:

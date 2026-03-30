@@ -337,6 +337,7 @@ class MultiOAuthManager:
                 "deepseek": "DEEPSEEK_API_KEY",
                 "openrouter": "OPENROUTER_API_KEY",
                 "gemini": "GEMINI_API_KEY",
+                "nvidia": "NVIDIA_API_KEY",
             }
             mapped_key = env_map.get(active)
             if mapped_key:
@@ -354,6 +355,7 @@ class MultiOAuthManager:
             ("deepseek",   "DEEPSEEK_API_KEY"),
             ("openrouter",  "OPENROUTER_API_KEY"),
             ("gemini",     "GEMINI_API_KEY"),
+            ("nvidia",     "NVIDIA_API_KEY"),
             ("ollama",     "OLLAMA_API_KEY"),
         ]
         for prov, env_var in ENV_PROVIDERS:

@@ -56,7 +56,23 @@ PROVIDERS = {
         "env_var": "ANTIGRAVITY_TOKEN",
         "oauth_only": True,
     },
+    "8": {
+        "id": "nvidia",
+        "name": "NVIDIA Build (FREE Cloud)",
+        "env_var": "NVIDIA_API_KEY",
+    },
 }
+
+# ── NVIDIA Build Free Model Catalog ──────────────────────────────────────────
+NVIDIA_MODELS = [
+    "deepseek-ai/deepseek-v3.1",
+    "deepseek-ai/deepseek-v3.2",
+    "minimaxai/minimax-m2.5",
+    "z-ai/glm5",
+    "moonshotai/kimi-k2.5",
+]
+NVIDIA_DEFAULT_MODEL = "deepseek-ai/deepseek-v3.1"
+NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 
 def banner():
@@ -196,6 +212,10 @@ def test_provider():
         payload = {
             "contents": [{"parts": [{"text": "Reply with only: hello"}]}]
         }
+    elif provider == "nvidia":
+        url = f"{NVIDIA_BASE_URL}/chat/completions"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        payload = {"model": NVIDIA_DEFAULT_MODEL, "messages": [{"role": "user", "content": "Say hello"}], "max_tokens": 10}
     else:
         url = "https://openrouter.ai/api/v1/chat/completions"
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "HTTP-Referer": "https://github.com/Maliot100X/BinanceClawBot"}
@@ -397,7 +417,8 @@ def reset_all_models():
     keys_to_clear = [
         "ACTIVE_AI_PROVIDER", "OPENAI_API_KEY", "GROQ_API_KEY", 
         "DEEPSEEK_API_KEY", "OPENROUTER_API_KEY", "GEMINI_API_KEY",
-        "OLLAMA_URL", "OLLAMA_API_KEY", "ANTIGRAVITY_TOKEN"
+        "OLLAMA_URL", "OLLAMA_API_KEY", "ANTIGRAVITY_TOKEN",
+        "NVIDIA_API_KEY"
     ]
     
     for k in keys_to_clear:
